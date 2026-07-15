@@ -44,7 +44,7 @@ function drawTarot(n) {
   // 개별 카드 조언 목록
   const perCard = spread.map(c => `<li><b>${c.position}</b> — ${TarotCore.interpretCard(c).replace(/^[^—]+— /,'')}</li>`).join('');
   const boostLine = useBoost
-    ? `<div style="font-size:0.68rem;color:#a8c;margin-top:4px">p20 사주(${saju}) 연동: 각 카드의 조언을 오늘의 사주 흐름과 겹쳐 읽어보라.</div>` : '';
+    ? `<div style="font-size:0.68rem;color:#a8c;margin-top:4px">사주 흐름(${saju}) 함께 읽기: 각 카드의 조언을 오늘의 사주 흐름과 겹쳐 읽어보세요.</div>` : '';
 
   document.getElementById('interp').innerHTML =
       `<div class="reading-narrative">${narrative}</div>`
@@ -78,9 +78,9 @@ function voiceTarot() {
 }
 
 function unlockTarotPremium() {
-  if (!confirm('p10 Credits 사용 — FICTIONAL ONLY. NO REAL VALUE. Proceed?')) return;
-  const extra = 'PREMIUM: p20+p21 듀오 종합 운명 리포트 생성. Codex 자동 강화.';
-  document.getElementById('interp').innerHTML += '<br><b>'+extra+'</b> <span style="color:#a8c">Limited Banner FOMO active.</span>';
+  if (!confirm('상세 리딩을 여시겠어요? — 픽션 엔터테인먼트 전용 · 실제 가치 없음')) return;
+  const extra = '상세 리딩: 사주와 타로를 함께 엮은 종합 이야기가 기록에 추가됐어요.';
+  document.getElementById('interp').innerHTML += '<br><b>'+extra+'</b> <span style="color:#a8c">오늘 한정 리딩</span>';
   recordToCodex('tarot-premium', extra, 92);
   triggerTarotBanner();
 }
@@ -96,8 +96,9 @@ function recordToCodex(type, text, score, extra={}) {
 function showCodex() {
   const el = document.getElementById('codexList');
   const data = JSON.parse(localStorage.getItem(CODEX_KEY)||'[]');
-  if (!data.length) { el.innerHTML = '기록 없음. Re-observe Codex로 birth.'; return; }
-  el.innerHTML = data.map((d,i)=>`<div class="card relic" data-idx="${i}">${d.ts.slice(5,10)} [${d.type}] ${d.text} <small>Lv${d.relicLv||1} p${d.power||d.score} x${(d.multi||1).toFixed(1)} — Click Re-observe → Birth</small></div>`).join('');
+  if (!data.length) { el.innerHTML = '아직 기록이 없어요. 카드를 뽑으면 여기에 쌓여요.'; return; }
+  const typeLabel = { 'tarot':'타로', 'tarot-premium':'상세 리딩' };
+  el.innerHTML = data.map((d,i)=>`<div class="card relic" data-idx="${i}">${d.ts.slice(5,10)} [${typeLabel[d.type]||'타로'}] ${d.text} <small>Lv${d.relicLv||1} · 기운 ${d.power||d.score} · x${(d.multi||1).toFixed(1)} — 눌러서 다시 보기</small></div>`).join('');
   el.onclick = (e) => {
     const el2 = e.target.closest('.relic'); if (!el2) return;
     reObserveCodexTarot(parseInt(el2.dataset.idx||'0'));
@@ -120,7 +121,8 @@ function reObserveCodexTarot(idx) {
     if (window.p6LungSurpriseEye && c) window.p6LungSurpriseEye(c.getContext('2d'),c.width,c.height*0.5,lung,0.42,{wound:0.5},0.2);
   }catch(e){}
   const b=document.createElement('div'); b.className='card'; b.style.cssText='font-size:0.76rem;margin-top:4px;border-color:#c5a46e';
-  b.textContent=`✧ Birth: ${r.type} re-observed (sfumato spread mutates)`; document.getElementById('codex').appendChild(b);
+  const typeLabel = { 'tarot':'타로', 'tarot-premium':'상세 리딩' };
+  b.textContent=`✧ ${typeLabel[r.type]||'타로'} 리딩을 다시 보며 기운이 깊어졌어요`; document.getElementById('codex').appendChild(b);
   showCodex();
 }
 
@@ -128,7 +130,7 @@ function triggerTarotBanner() {
   // FOMO limited for p21
   const b = document.createElement('div');
   b.style.cssText = 'position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:#221a35;color:#c9a;padding:3px 10px;border:1px solid #a38cd1;font-size:0.7rem';
-  b.textContent = '🌕 LIMITED ARCANA WINDOW — FOMO 1 draw boost • fictional';
+  b.textContent = '🌕 오늘 한정 리딩 · 픽션 엔터테인먼트';
   document.body.appendChild(b);
   setTimeout(()=>b.remove(), 38000);
 }
@@ -175,8 +177,8 @@ function drawTarotCanvas(cards, score) {
 }
 function mutateSharedFateTarot(v){ let p=JSON.parse(localStorage.getItem('fateCodex')||'[]'); if(p[0]){p[0].score=Math.min(99,(p[0].score||60)+Math.floor(v*0.03)); localStorage.setItem('fateCodex',JSON.stringify(p));} }
 function birthTarotSpore(){ let a=JSON.parse(localStorage.getItem('legion_birth_artifacts')||'[]'); a.unshift({id:'ts'+Date.now(),from:'p21',power:5+Math.random()*12|0}); localStorage.setItem('legion_birth_artifacts',JSON.stringify(a.slice(0,9))); }
-function addCrossNavP21(){ const n=document.createElement('div'); n.innerHTML='<button onclick="window.open(\'../p20-saju-miniapp/index.html\',\'_blank\')">p20 Saju</button> <button onclick="window.open(\'../p17-coin-wallet-app/index.html\',\'_blank\')">p17</button>'; document.body.appendChild(n); }
-function startTarotFomoTimer(){ setInterval(()=>{const e=document.getElementById('fomo'); if(e) e.textContent = e.textContent.includes('가능') ? '드로우 가능 (FOMO)' : e.textContent;}, 40000); }
+function addCrossNavP21(){ const n=document.createElement('div'); n.innerHTML='<button onclick="window.open(\'../p20-saju-miniapp/index.html\',\'_blank\')">🔮 사주도 보기</button>'; document.body.appendChild(n); }
+function startTarotFomoTimer(){ setInterval(()=>{const e=document.getElementById('fomo'); if(e) e.textContent = e.textContent.includes('가능') ? '오늘의 카드 드로우 가능' : e.textContent;}, 40000); }
 
 // === NIOBE VIRAL UPGRADE: p21 "Fate Share" (symmetric to p20) ===
 // Codex relic export + surprise story share. Cross p9/p11. K + retention. Fictional shield.
@@ -185,7 +187,7 @@ function fateShare(fromCodex=false) {
   let codex = JSON.parse(localStorage.getItem(CODEX_KEY) || '[]');
   if (!codex.length) { alert('타로 드로우 먼저.'); return; }
   const relic = fromCodex ? codex[0] : codex[0];
-  const story = `🌌 MY Fate Relic (p21 Tarot) — ${relic.text}\nLv${relic.relicLv||1} p${relic.power||relic.score} x${(relic.multi||1).toFixed(1)}\np20+p21 Destiny Duo • p6 Lung\n\n운명의 Codex. 공유해 네 이야기를 더하라.\nFICTIONAL ONLY • 18+ • Prominent disclosure • NO real advice • Reversible.\n\n#DestinyDuo p20+p21\n👉 ${location.href}`;
+  const story = `🌌 오늘의 타로 리딩 — ${relic.text}\nLv${relic.relicLv||1} · 기운 ${relic.power||relic.score} · x${(relic.multi||1).toFixed(1)}\n타로 + 사주 함께 읽기\n\n나의 리딩 이야기. 공유하고 당신의 이야기도 더해보세요.\n픽션 엔터테인먼트 전용 · 18+ · 실제 조언 아님.\n\n#타로 #사주\n👉 ${location.href}`;
   navigator.clipboard.writeText(story).then(() => {
     const bonus = 7 + Math.floor((relic.power||60)/11);
     let bal = parseFloat(localStorage.getItem('p10_balance')||'1284') + bonus; localStorage.setItem('p10_balance', bal.toFixed(2));
@@ -193,6 +195,6 @@ function fateShare(fromCodex=false) {
       localStorage.setItem('p21_fate_to_p9', JSON.stringify({score:relic.score||60, ts:Date.now()}));
       localStorage.setItem('p21_fate_to_p11', JSON.stringify({relicPower:relic.power, aura:'tarot', ts:Date.now()}));
     } catch(e){}
-    alert(`✅ Fate Share copied. +${bonus} bonus. p9 live + p11 seeded.\nFictional. Prominent disclosure.`);
+    alert(`✅ 리딩 이야기를 복사했어요. 붙여넣어 공유하세요.\n픽션 엔터테인먼트 전용.`);
   }).catch(()=>prompt('Copy:', story));
 }

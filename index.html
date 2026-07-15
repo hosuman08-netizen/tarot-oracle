@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>p21 · Tarot</title>
+  <title>타로 리딩</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
   <header>
-    <h1>타로 <span class="mini">p21</span></h1>
-    <p class="tag">p20 사주 + p21 타로 · Destiny Duo</p>
+    <h1>타로 리딩</h1>
+    <p class="tag">오늘의 카드로 읽는 이야기 · 사주와 함께</p>
     <div class="fomo" id="fomo">오늘 드로우 1회</div>
   </header>
 
@@ -21,7 +21,7 @@
       <button onclick="drawTarot(3)">3장 (과거·현재·미래)</button>
       <button onclick="drawTarot(10)">10장 (켈틱 크로스)</button>
       <div style="margin-top:8px">
-        <label><input type="checkbox" id="p20boost"> p20 사주 부스트 적용 (연관성)</label>
+        <label><input type="checkbox" id="p20boost"> 사주 흐름 함께 읽기</label>
       </div>
     </section>
 
@@ -30,24 +30,24 @@
       <canvas id="tarot-canvas" width="320" height="110" style="border:1px solid #3a3124;border-radius:4px;margin:4px 0"></canvas>
       <div id="cards" class="cards"></div>
       <div id="interp" class="card"></div>
-      <button onclick="voiceTarot()">🎤 p6 음성 해석</button>
-      <button onclick="unlockTarotPremium()">p10 상세 + p20 크로스</button>
-      <button onclick="fateShare()" style="background:#3a2f22;color:#f5f1e6;border:1px solid #a38cd1;">🌌 Fate Share — Destiny Duo (p20+p21 Relic Export + Story)</button>
+      <button onclick="voiceTarot()">🎤 음성으로 듣기</button>
+      <button onclick="unlockTarotPremium()">✨ 상세 리딩 (사주 연계)</button>
+      <button onclick="fateShare()" style="background:#3a2f22;color:#f5f1e6;border:1px solid #a38cd1;">🌌 결과 공유하기</button>
       <div style="font-size:0.65rem;opacity:0.6;margin-top:4px">픽션 엔터테인먼트 • 실제 운명 아님 • 18+</div>
     </section>
 
     <section id="codex">
-      <h2>공유 Fate Codex <span class="mini">p20+p21</span></h2>
+      <h2>나의 리딩 기록</h2>
       <div id="codexList"></div>
-      <button onclick="showCodex()">새로고침 (re-observe = power up)</button>
-      <button onclick="fateShare(true)" style="background:#3a2f22;color:#f5f1e6;border:1px solid #a38cd1;margin-top:4px;">📤 Export Top Relic as Fate Story (UGC)</button>
+      <button onclick="showCodex()">새로고침</button>
+      <button onclick="fateShare(true)" style="background:#3a2f22;color:#f5f1e6;border:1px solid #a38cd1;margin-top:4px;">📤 최근 리딩 이야기로 공유</button>
       <div style="font-size:0.6rem;opacity:0.6">All fictional entertainment. Layered prominent disclosure. 18+ only.</div>
     </section>
 
-    <nav class="cross"><a href="../p20-saju-miniapp/index.html">← p20 사주로</a></nav>
+    <nav class="cross"><a href="../p20-saju-miniapp/index.html">🔮 사주도 보기</a></nav>
   </main>
 
-  <footer><small>Entertainment only. Fictional. p20와 상호 강화.</small></footer>
+  <footer><small>엔터테인먼트 전용 · 픽션 리딩 · 실제 운명 아님</small></footer>
   <script src="./lung-surprise-eye.js"></script>
   <script src="./tarot-core.js"></script>
   <script src="script.js"></script>
