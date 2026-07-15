@@ -10,8 +10,9 @@ const LilithTarot = {
   resonance: 0.48,
   update() { this.resonance = 0.32 + Math.random()*0.61; return this.resonance; },
   varDraw(base) {
-    const v = 0.48 + Math.random()*1.82;
-    return Math.floor(base * v * (0.9 + this.resonance*0.55) * tarotLuck);
+    // variable ratio centered near 1.0 so scores keep a real spread (not always maxed)
+    const v = 0.72 + Math.random()*0.58;
+    return Math.floor(base * v * (0.82 + this.resonance*0.3) * tarotLuck);
   },
   nearMiss(score) {
     if (Math.random() > 0.59) return Math.min(97, score + (Math.random()>0.5 ? 7 : -2));
@@ -50,14 +51,15 @@ function drawTarot(n) {
 
 function getInterp(cards, boosted, sajuBoost=0) {
   const base = cards.join(' · ') + (boosted ? ' — 사주와 공명' : '');
-  const raw = 53 + Math.floor(Math.random()*42) + Math.floor(sajuBoost/12);
+  const raw = 42 + Math.floor(Math.random()*38) + Math.floor(sajuBoost/14);
   let score = LilithTarot.varDraw(raw);
   score = LilithTarot.nearMiss(score);
   const isLow = score < 61;
-  if (isLow) tarotPity++; localStorage.setItem('tarotPity', tarotPity);
+  if (isLow) tarotPity++;
+  localStorage.setItem('tarotPity', tarotPity);
   score = LilithTarot.pityBoost(score);
-  const multi = 0.85 + LilithTarot.resonance * 0.9 + (Math.random()>0.69?0.6:0);
-  const final = Math.min(99, Math.floor(score * multi));
+  const multi = 0.82 + LilithTarot.resonance * 0.5 + (Math.random()>0.82?0.35:0);
+  const final = Math.max(28, Math.min(99, Math.floor(score * multi)));
   const near = (final % 5 === 0) || Math.random()>0.63;
   const pity = tarotPity >= 2;
   return { text: base + `<br>해석 지수: ${final}`, score: final, multi, near, pity };
