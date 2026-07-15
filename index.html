@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p21 · Tarot</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <header>
+    <h1>타로 <span class="mini">p21</span></h1>
+    <p class="tag">p20 사주 + p21 타로 Destiny Duo · 연동됨 • FULL PSYCH CHEAT</p>
+    <div class="fomo" id="fomo">오늘 드로우 1회</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>스프레드 선택</h2>
+      <button onclick="drawTarot(1)">1장 (일일)</button>
+      <button onclick="drawTarot(3)">3장 (과거·현재·미래)</button>
+      <button onclick="drawTarot(5)">5장 (Celtic cross lite)</button>
+      <div style="margin-top:8px">
+        <label><input type="checkbox" id="p20boost"> p20 사주 부스트 적용 (연관성)</label>
+      </div>
+    </section>
+
+    <section id="spread" style="display:none">
+      <h2>드로우 결과</h2>
+      <canvas id="tarot-canvas" width="320" height="110" style="border:1px solid #3a3124;border-radius:4px;margin:4px 0"></canvas>
+      <div id="cards" class="cards"></div>
+      <div id="interp" class="card"></div>
+      <button onclick="voiceTarot()">🎤 p6 음성 해석</button>
+      <button onclick="unlockTarotPremium()">p10 상세 + p20 크로스</button>
+      <button onclick="fateShare()" style="background:#3a2f22;color:#f5f1e6;border:1px solid #a38cd1;">🌌 Fate Share — Destiny Duo (p20+p21 Relic Export + Story)</button>
+      <div style="font-size:0.65rem;opacity:0.65;margin-top:4px">FICTIONAL • VARIABLE RATIO • NEAR-MISS CARDS • PITY • SURPRISE MULT • NO REAL FATE</div>
+    </section>
+
+    <section id="codex">
+      <h2>공유 Fate Codex — ENDOWMENT RELICS (p20+p21)</h2>
+      <div id="codexList"></div>
+      <button onclick="showCodex()">새로고침 (re-observe = power up)</button>
+      <button onclick="fateShare(true)" style="background:#3a2f22;color:#f5f1e6;border:1px solid #a38cd1;margin-top:4px;">📤 Export Top Relic as Fate Story (UGC)</button>
+      <div style="font-size:0.6rem;opacity:0.6">All fictional entertainment. Layered prominent disclosure. 18+ only.</div>
+    </section>
+
+    <nav class="cross"><a href="../p20-saju-miniapp/index.html">← p20 사주로</a></nav>
+  </main>
+
+  <footer><small>Entertainment only. Fictional. p20와 상호 강화.</small></footer>
+  <script src="./lung-surprise-eye.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
