@@ -1,42 +1,16 @@
-// p21 Tarot + p20 cross + p6 + Codex
-// LILITH PSYCH FULL-CHEAT: variable ratio draws, near-miss card reveals, surprise multipliers, pity for bad spreads, endowment on personal Codex + cross p20
-const TAROT = ["The Fool","The Magician","The High Priestess","The Empress","The Emperor","The Hierophant","The Lovers","The Chariot","Strength","The Hermit","Wheel of Fortune","Justice","The Hanged Man","Death","Temperance","The Devil","The Tower","The Star","The Moon","The Sun","Judgement","The World"];
-const fullDeck = TAROT;
-// Major Arcana 정방향 키워드 (엔터테인먼트용) — 카드에 실제 의미 부여
-const TAROT_MEANING = {
-  "The Fool":"새 시작·모험","The Magician":"의지·실현","The High Priestess":"직관·비밀",
-  "The Empress":"풍요·돌봄","The Emperor":"질서·주도","The Hierophant":"전통·배움",
-  "The Lovers":"선택·관계","The Chariot":"추진·승리","Strength":"용기·인내",
-  "The Hermit":"성찰·고독","Wheel of Fortune":"전환점·운","Justice":"균형·인과",
-  "The Hanged Man":"멈춤·전환의 시선","Death":"끝과 재생","Temperance":"조화·절제",
-  "The Devil":"집착·유혹","The Tower":"급변·해방","The Star":"희망·치유",
-  "The Moon":"불안·환영","The Sun":"활력·성취","Judgement":"각성·부름","The World":"완성·통합"
-};
-function cardMeaning(raw){ const base=raw.replace(/\s*\(.*/,'').trim(); return TAROT_MEANING[base]||'미지의 결'; }
+// p21 Tarot — 실제 리딩은 tarot-core.js(TarotCore)가 담당. 이 파일은 UI·Codex·크로스 연동.
 const CODEX_KEY = 'fateCodex';
-let tarotPity = parseInt(localStorage.getItem('tarotPity')||'0');
-let tarotLuck = parseFloat(localStorage.getItem('tarotLuck')||'1.0');
 
+// resonance: 캔버스/서사에 미세한 무작위 결을 주는 값(엔터테인먼트용). 매 드로우마다 갱신.
 const LilithTarot = {
   resonance: 0.48,
-  update() { this.resonance = 0.32 + Math.random()*0.61; return this.resonance; },
-  varDraw(base) {
-    // variable ratio centered near 1.0 so scores keep a real spread (not always maxed)
-    const v = 0.72 + Math.random()*0.58;
-    return Math.floor(base * v * (0.82 + this.resonance*0.3) * tarotLuck);
-  },
-  nearMiss(score) {
-    if (Math.random() > 0.59) return Math.min(97, score + (Math.random()>0.5 ? 7 : -2));
-    return score;
-  },
-  pityBoost(s) { if (tarotPity>=2) { tarotPity=0; localStorage.setItem('tarotPity','0'); return Math.min(98, s+15); } return s; }
+  update() { this.resonance = 0.32 + Math.random()*0.61; return this.resonance; }
 };
 
 function updateFomo() {
   const el=document.getElementById('fomo');
-  const k = new Date().toDateString();
-  if(localStorage.getItem('tarotFomo')!==k){ localStorage.setItem('tarotFomo',k); tarotPity=0; localStorage.setItem('tarotPity','0'); }
-  el.textContent = `오늘 드로우 가능 • luck ${(tarotLuck*100|0)}%`;
+  if (!el) return;
+  el.textContent = '오늘 드로우 가능 · 셔플 후 카드를 뽑으세요';
 }
 
 // 실제 타로 코어(tarot-core.js)로 드로우 — 중복없는 셔플 + 정/역방향 + 포지션 해석
