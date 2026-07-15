@@ -138,7 +138,6 @@ function triggerTarotBanner() {
 window.onload = () => {
   updateFomo();
   showCodex();
-  addCrossNavP21();
   startTarotFomoTimer();
   const f = document.querySelector('footer');
   if (f) f.innerHTML = '<small>픽션 AI 리딩 · 엔터테인먼트 전용 · 실제 운명/조언 아님 · 18+ · 되돌림 가능</small>';
@@ -177,7 +176,6 @@ function drawTarotCanvas(cards, score) {
 }
 function mutateSharedFateTarot(v){ let p=JSON.parse(localStorage.getItem('fateCodex')||'[]'); if(p[0]){p[0].score=Math.min(99,(p[0].score||60)+Math.floor(v*0.03)); localStorage.setItem('fateCodex',JSON.stringify(p));} }
 function birthTarotSpore(){ let a=JSON.parse(localStorage.getItem('legion_birth_artifacts')||'[]'); a.unshift({id:'ts'+Date.now(),from:'p21',power:5+Math.random()*12|0}); localStorage.setItem('legion_birth_artifacts',JSON.stringify(a.slice(0,9))); }
-function addCrossNavP21(){ const n=document.createElement('div'); n.innerHTML='<button onclick="window.open(\'../p20-saju-miniapp/index.html\',\'_blank\')">🔮 사주도 보기</button>'; document.body.appendChild(n); }
 function startTarotFomoTimer(){ setInterval(()=>{const e=document.getElementById('fomo'); if(e) e.textContent = e.textContent.includes('가능') ? '오늘의 카드 드로우 가능' : e.textContent;}, 40000); }
 
 // === NIOBE VIRAL UPGRADE: p21 "Fate Share" (symmetric to p20) ===
