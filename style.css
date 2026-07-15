@@ -12,6 +12,16 @@ h1 { font-size:2.05rem; margin:0; color:var(--gold); letter-spacing:-0.5px; } /*
 .card-pos { font-size:0.6rem; letter-spacing:1px; color:var(--dim); text-transform:uppercase; }
 .card-name { color:var(--gold); font-weight:600; font-size:0.92rem; }
 .card-mean { font-size:0.72rem; color:#c9bda6; opacity:0.85; }
+.card-dir { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+.card-up { font-size:0.58rem; color:#c5a46e; border:1px solid #6b5a3a; border-radius:999px; padding:1px 7px; }
+.card-rev { font-size:0.58rem; color:#e0917f; border:1px solid #7a4638; border-radius:999px; padding:1px 7px; }
+.card-boost { font-size:0.58rem; color:#a89cc9; border:1px solid #524a6b; border-radius:999px; padding:1px 7px; }
+#cards .card.is-reversed { border-color:#5a3a30; }
+#cards .card.is-reversed .card-name { color:#e0b0a0; }
+.reading-narrative { font-size:0.92rem; line-height:1.62; color:#f0e8d8; margin-bottom:8px; }
+.reading-list { margin:6px 0 0; padding-left:1.1rem; font-size:0.76rem; color:#c9bda6; line-height:1.5; }
+.reading-list li { margin-bottom:3px; }
+.reading-list b { color:var(--gold); }
 button { background:#c5a46e; color:#0a0806; border:none; padding:9px 14px; border-radius:5px; margin:4px; font-weight:600; font-size:0.89rem; cursor:pointer; }
 .fomo { font-size:0.72rem; background:#15120f; padding:4px 11px; border-radius:999px; display:inline-block; border:1px solid var(--gold); }
 .cross { margin:calc(var(--grid)*3) 0; text-align:center; }

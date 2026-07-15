@@ -39,56 +39,68 @@ function updateFomo() {
   el.textContent = `오늘 드로우 가능 • luck ${(tarotLuck*100|0)}%`;
 }
 
+// 실제 타로 코어(tarot-core.js)로 드로우 — 중복없는 셔플 + 정/역방향 + 포지션 해석
+let lastSpread = null;
 function drawTarot(n) {
+  if (!window.TarotCore) { alert('타로 엔진 로딩 중입니다. 잠시 후 다시.'); return; }
   const useBoost = document.getElementById('p20boost') && document.getElementById('p20boost').checked;
-  const spread = [];
   LilithTarot.update();
   const saju = parseInt((JSON.parse(localStorage.getItem('fateCodex')||'[]')[0]||{score:60}).score||60);
-  for(let i=0;i<n;i++){
-    let c = fullDeck[Math.floor(Math.random()*fullDeck.length)];
-    if (Math.random() > 0.67) c = c + ' (거의 Major)';
-    if(useBoost && Math.random()>0.48) c += ` (사주${saju%5+1} boost)`;
-    spread.push(c);
-  }
-  const interp = getInterp(spread, useBoost, saju);
-  const posLabels = n===3 ? ['과거','현재','미래'] : n===5 ? ['상황','도전','뿌리','흐름','결과'] : ['오늘'];
-  document.getElementById('cards').innerHTML = spread.map((c,i)=>{
-    const pos = posLabels[i] ? `<span class="card-pos">${posLabels[i]}</span>` : '';
-    return `<div class="card">${pos}<span class="card-name">${c}</span><span class="card-mean">${cardMeaning(c)}</span></div>`;
+
+  // 진짜 셔플 드로우: 카드 중복 없음, 각 카드 정/역방향, 포지션별 역할 부여
+  const spread = TarotCore.drawSpread(n);
+  lastSpread = spread;
+
+  // 카드 렌더 — 방향(정/역)과 포지션 역할을 실제로 표시
+  document.getElementById('cards').innerHTML = spread.map((c)=>{
+    const dirBadge = c.reversed
+      ? '<span class="card-rev" title="역방향">⟲ 역방향</span>'
+      : '<span class="card-up" title="정방향">정방향</span>';
+    const boostTag = (useBoost && c.name) ? `<span class="card-boost" title="사주 연동">사주 공명</span>` : '';
+    return `<div class="card${c.reversed?' is-reversed':''}">`
+      + `<span class="card-pos">${c.position}</span>`
+      + `<span class="card-name">${c.ko} · ${c.name}</span>`
+      + `<span class="card-dir">${dirBadge}${boostTag}</span>`
+      + `<span class="card-mean">${c.gist}</span>`
+      + `</div>`;
   }).join('');
-  const resoTxt = interp.near ? '공명이 가까스로 스쳤다 — 다시 뽑으면 닿을지도.'
-    : interp.pity ? '흐름이 다시 너에게 기운다.'
-    : '카드의 결이 조용히 정렬됐다.';
-  document.getElementById('interp').innerHTML = interp.text + `<div style="font-size:0.68rem;opacity:.55;margin-top:6px;font-style:italic">${resoTxt}</div>`;
+
+  // 실제 종합 해석 서사 (카드×포지션×방향을 엮음)
+  const narrative = TarotCore.synthesize(spread);
+  // 개별 카드 조언 목록
+  const perCard = spread.map(c => `<li><b>${c.position}</b> — ${TarotCore.interpretCard(c).replace(/^[^—]+— /,'')}</li>`).join('');
+  const boostLine = useBoost
+    ? `<div style="font-size:0.68rem;color:#a8c;margin-top:4px">p20 사주(${saju}) 연동: 각 카드의 조언을 오늘의 사주 흐름과 겹쳐 읽어보라.</div>` : '';
+
+  document.getElementById('interp').innerHTML =
+      `<div class="reading-narrative">${narrative}</div>`
+    + `<ul class="reading-list">${perCard}</ul>`
+    + boostLine;
+
   document.getElementById('spread').style.display='block';
-  drawTarotCanvas(spread, interp.score);
-  recordToCodex('tarot', interp.text, interp.score + (useBoost?12:0), {multi:interp.multi, near:interp.near});
-  mutateSharedFateTarot(interp.score);
+  drawTarotCanvas(spread, spreadScore(spread));
+
+  // Codex 기록엔 실제 리딩 요약 저장
+  const summary = spread.map(c=>`${c.ko}${c.reversed?'(역)':''}`).join('·');
+  recordToCodex('tarot', summary + ' — ' + narrative, spreadScore(spread), {reversed: spread.filter(c=>c.reversed).length});
+  mutateSharedFateTarot(spreadScore(spread));
   if (Math.random() > 0.82) birthTarotSpore();
 }
 
-function getInterp(cards, boosted, sajuBoost=0) {
-  const base = cards.join(' · ') + (boosted ? ' — 사주와 공명' : '');
-  const raw = 42 + Math.floor(Math.random()*38) + Math.floor(sajuBoost/14);
-  let score = LilithTarot.varDraw(raw);
-  score = LilithTarot.nearMiss(score);
-  const isLow = score < 61;
-  if (isLow) tarotPity++;
-  localStorage.setItem('tarotPity', tarotPity);
-  score = LilithTarot.pityBoost(score);
-  const multi = 0.82 + LilithTarot.resonance * 0.5 + (Math.random()>0.82?0.35:0);
-  const final = Math.max(28, Math.min(99, Math.floor(score * multi)));
-  const near = (final % 5 === 0) || Math.random()>0.63;
-  const pity = tarotPity >= 2;
-  return { text: base + `<br>해석 지수: ${final}`, score: final, multi, near, pity };
+// 리딩의 '결' 지수 — 정방향/역방향 구성에서 파생(엔터테인먼트용, 코드=표시 일치)
+function spreadScore(spread){
+  const up = spread.filter(c=>!c.reversed).length;
+  const ratio = up / spread.length;               // 정방향 비율
+  return Math.round(45 + ratio * 45 + LilithTarot.resonance * 8); // 45~98 범위
 }
 
 function voiceTarot() {
-  const t = document.getElementById('interp').textContent || '타로 먼저 뽑으세요';
-  const u = new SpeechSynthesisUtterance('p6: ' + t);
-  u.lang='ko-KR'; speechSynthesis.speak(u);
-  const r = LilithTarot.resonance || 0.5;
-  if (r > 0.5) document.getElementById('interp').innerHTML += `<br><small>p6 surprise x${(r*1.8).toFixed(1)}</small>`;
+  if (!lastSpread) { alert('타로 먼저 뽑으세요.'); return; }
+  // 실제 리딩 서사를 음성으로 — 카드/포지션/방향을 또박또박
+  const parts = lastSpread.map(c => `${c.position}, ${c.ko} ${c.reversed?'역방향':'정방향'}. ${c.gist}.`);
+  const text = window.TarotCore ? TarotCore.synthesize(lastSpread) : parts.join(' ');
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='ko-KR'; u.rate=0.96; speechSynthesis.speak(u);
 }
 
 function unlockTarotPremium() {
@@ -163,18 +175,22 @@ function drawTarotCanvas(cards, score) {
   const c = document.getElementById('tarot-canvas'); if (!c) return;
   const ctx = c.getContext('2d'); const w = c.width, h = c.height;
   ctx.fillStyle = '#0a0806'; ctx.fillRect(0,0,w,h);
-  const golden = 0.618;
-  // Sfumato tarot spread (soft layered positions)
+  // Sfumato tarot spread (soft layered positions) — cards may be objects {reversed}
   for (let g=0; g<4; g++) {
-    ctx.strokeStyle = `hsla(42,55%,74%,${0.22 - g*0.04})`;
     ctx.lineWidth = 1.6 - g*0.2; ctx.shadowBlur = 5 + g*1.5;
     const spreadW = w * (0.72 + g*0.04);
-    cards.forEach((_,i) => {
+    cards.forEach((cd,i) => {
+      const reversed = cd && cd.reversed;
+      // 역방향 카드는 붉은 기운, 정방향은 금빛 — 실제 방향을 시각화
+      ctx.strokeStyle = reversed
+        ? `hsla(8,52%,62%,${0.24 - g*0.04})`
+        : `hsla(42,55%,74%,${0.22 - g*0.04})`;
       const x = w*0.5 + (i - (cards.length-1)/2) * (spreadW / (cards.length+0.6));
       const y = h*0.5 + Math.sin(i*1.7)* (9 + g);
-      ctx.beginPath(); ctx.arc(x, y, 13 + g*1.2, 0, Math.PI*2); ctx.stroke();
-      // small golden inner
-      if (g===0) { ctx.lineWidth=0.7; ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.stroke(); ctx.lineWidth=1.6; }
+      ctx.beginPath(); ctx.arc(x, y, 12 + g*1.1, 0, Math.PI*2); ctx.stroke();
+      // 역방향 표식: 아래로 향한 짧은 획
+      if (g===0 && reversed) { ctx.lineWidth=1.1; ctx.beginPath(); ctx.moveTo(x,y-5); ctx.lineTo(x,y+7); ctx.stroke(); ctx.lineWidth=1.6; }
+      else if (g===0) { ctx.lineWidth=0.7; ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.stroke(); ctx.lineWidth=1.6; }
     });
   }
   ctx.shadowBlur=0;
