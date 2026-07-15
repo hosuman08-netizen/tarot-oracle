@@ -2,6 +2,17 @@
 // LILITH PSYCH FULL-CHEAT: variable ratio draws, near-miss card reveals, surprise multipliers, pity for bad spreads, endowment on personal Codex + cross p20
 const TAROT = ["The Fool","The Magician","The High Priestess","The Empress","The Emperor","The Hierophant","The Lovers","The Chariot","Strength","The Hermit","Wheel of Fortune","Justice","The Hanged Man","Death","Temperance","The Devil","The Tower","The Star","The Moon","The Sun","Judgement","The World"];
 const fullDeck = TAROT;
+// Major Arcana 정방향 키워드 (엔터테인먼트용) — 카드에 실제 의미 부여
+const TAROT_MEANING = {
+  "The Fool":"새 시작·모험","The Magician":"의지·실현","The High Priestess":"직관·비밀",
+  "The Empress":"풍요·돌봄","The Emperor":"질서·주도","The Hierophant":"전통·배움",
+  "The Lovers":"선택·관계","The Chariot":"추진·승리","Strength":"용기·인내",
+  "The Hermit":"성찰·고독","Wheel of Fortune":"전환점·운","Justice":"균형·인과",
+  "The Hanged Man":"멈춤·전환의 시선","Death":"끝과 재생","Temperance":"조화·절제",
+  "The Devil":"집착·유혹","The Tower":"급변·해방","The Star":"희망·치유",
+  "The Moon":"불안·환영","The Sun":"활력·성취","Judgement":"각성·부름","The World":"완성·통합"
+};
+function cardMeaning(raw){ const base=raw.replace(/\s*\(.*/,'').trim(); return TAROT_MEANING[base]||'미지의 결'; }
 const CODEX_KEY = 'fateCodex';
 let tarotPity = parseInt(localStorage.getItem('tarotPity')||'0');
 let tarotLuck = parseFloat(localStorage.getItem('tarotLuck')||'1.0');
@@ -40,7 +51,11 @@ function drawTarot(n) {
     spread.push(c);
   }
   const interp = getInterp(spread, useBoost, saju);
-  document.getElementById('cards').innerHTML = spread.map(c=>`<div class="card">${c}</div>`).join('');
+  const posLabels = n===3 ? ['과거','현재','미래'] : n===5 ? ['상황','도전','뿌리','흐름','결과'] : ['오늘'];
+  document.getElementById('cards').innerHTML = spread.map((c,i)=>{
+    const pos = posLabels[i] ? `<span class="card-pos">${posLabels[i]}</span>` : '';
+    return `<div class="card">${pos}<span class="card-name">${c}</span><span class="card-mean">${cardMeaning(c)}</span></div>`;
+  }).join('');
   const resoTxt = interp.near ? '공명이 가까스로 스쳤다 — 다시 뽑으면 닿을지도.'
     : interp.pity ? '흐름이 다시 너에게 기운다.'
     : '카드의 결이 조용히 정렬됐다.';
@@ -138,7 +153,7 @@ window.onload = () => {
   addCrossNavP21();
   startTarotFomoTimer();
   const f = document.querySelector('footer');
-  if (f) f.innerHTML = '<small>FICTIONAL AI READINGS ONLY • VARIABLE + NEAR-MISS + PITY + ENDOWMENT • Prominent disclosure • Entertainment • 18+ • Reversible</small>';
+  if (f) f.innerHTML = '<small>픽션 AI 리딩 · 엔터테인먼트 전용 · 실제 운명/조언 아님 · 18+ · 되돌림 가능</small>';
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   if (window.getP6LungSurprise) console.log('[p21] p6 lung + canvas ready');
 };
@@ -166,7 +181,7 @@ function drawTarotCanvas(cards, score) {
   // p6 lung eye on tarot spread (real integration)
   const lung = JSON.parse(localStorage.getItem('p6_lungFragment')||'{}');
   if (window.p6LungSurpriseEye) window.p6LungSurpriseEye(ctx, w, h*0.5, lung, 0.5, {wound:0.4+(score||0)*0.002}, 0.28);
-  ctx.fillStyle='#e8e0d0'; ctx.font='9px system-ui'; ctx.fillText('Tarot Spread • Sfumato + p6 Lung', 22, h-8);
+  ctx.fillStyle='#8b6f47'; ctx.font='9px system-ui'; ctx.fillText('Tarot Spread', 22, h-8);
 }
 function mutateSharedFateTarot(v){ let p=JSON.parse(localStorage.getItem('fateCodex')||'[]'); if(p[0]){p[0].score=Math.min(99,(p[0].score||60)+Math.floor(v*0.03)); localStorage.setItem('fateCodex',JSON.stringify(p));} }
 function birthTarotSpore(){ let a=JSON.parse(localStorage.getItem('legion_birth_artifacts')||'[]'); a.unshift({id:'ts'+Date.now(),from:'p21',power:5+Math.random()*12|0}); localStorage.setItem('legion_birth_artifacts',JSON.stringify(a.slice(0,9))); }
