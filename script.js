@@ -41,7 +41,10 @@ function drawTarot(n) {
   }
   const interp = getInterp(spread, useBoost, saju);
   document.getElementById('cards').innerHTML = spread.map(c=>`<div class="card">${c}</div>`).join('');
-  document.getElementById('interp').innerHTML = interp.text + `<div style="font-size:0.65rem;opacity:.7;margin-top:4px">VARIABLE x${interp.multi.toFixed(1)} • NEAR-MISS ${interp.near? 'YES':'no'} • PITY ${interp.pity?'TRIGGER':'-'}</div>`;
+  const resoTxt = interp.near ? '공명이 가까스로 스쳤다 — 다시 뽑으면 닿을지도.'
+    : interp.pity ? '흐름이 다시 너에게 기운다.'
+    : '카드의 결이 조용히 정렬됐다.';
+  document.getElementById('interp').innerHTML = interp.text + `<div style="font-size:0.68rem;opacity:.55;margin-top:6px;font-style:italic">${resoTxt}</div>`;
   document.getElementById('spread').style.display='block';
   drawTarotCanvas(spread, interp.score);
   recordToCodex('tarot', interp.text, interp.score + (useBoost?12:0), {multi:interp.multi, near:interp.near});
