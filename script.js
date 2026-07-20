@@ -400,11 +400,41 @@ function spreadScore(spread){
   return Math.round(45 + (up / spread.length) * 45);
 }
 
+function exportReadingsJSON(){
+  try {
+    const all = readJSON(READINGS_KEY, []);
+    const payload = { app: 'tarot-oracle', exportedAt: new Date().toISOString(), readings: all.slice(0, 100) };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'tarot-readings-' + todayKey() + '.json';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+    if (window.legionTrack) legionTrack('export', { n: all.length });
+  } catch (e) {}
+}
+function weekMoodAvg(all){
+  try {
+    const cut = Date.now() - 7 * 86400000;
+    const moods = (all || []).filter(function (r) {
+      const t = r && r.ts ? Date.parse(r.ts) : 0;
+      return t >= cut && r.mood > 0;
+    }).map(function (r) { return r.mood; });
+    if (!moods.length) return 0;
+    return Math.round((moods.reduce(function (a, b) { return a + b; }, 0) / moods.length) * 10) / 10;
+  } catch (e) { return 0; }
+}
 function renderHistory(){
   const el = $('historyList'); if (!el) return;
   const all = readJSON(READINGS_KEY, []);
   if (!all.length){ el.innerHTML = '<p class="empty">아직 기록이 없어요. 카드를 뽑으면 여기에 쌓입니다.</p>'; return; }
-  el.innerHTML = all.slice(0, 20).map(r => {
+  const mAvg = weekMoodAvg(all);
+  el.innerHTML =
+    `<div class="row" style="margin-bottom:10px;gap:8px;flex-wrap:wrap;align-items:center">
+      <button type="button" class="btn-quiet" id="exportReadings">⬇ 기록 백업</button>
+      ${mAvg ? `<span class="hint">7일 기분 평균 ${mAvg}/5</span>` : ''}
+    </div>` +
+    all.slice(0, 20).map(r => {
     const names = r.cards.map(c => esc(c.ko) + (c.reversed ? '<i>역</i>' : '')).join(' · ');
     const mood = r.mood ? `<span class="mood-dot" title="그때의 느낌 ${r.mood}/5">${'●'.repeat(r.mood)}${'○'.repeat(5-r.mood)}</span>` : '';
     return `<article class="hist" data-id="${esc(r.id)}">
@@ -415,6 +445,8 @@ function renderHistory(){
       ${mood}
     </article>`;
   }).join('');
+  const xb = $('exportReadings');
+  if (xb) xb.onclick = exportReadingsJSON;
 }
 
 // ── 거울 — 쌓인 기록을 되돌려준다 ───────────────────────────────────────────
