@@ -665,18 +665,36 @@ function weekMoodAvg(all){
     return Math.round((moods.reduce(function (a, b) { return a + b; }, 0) / moods.length) * 10) / 10;
   } catch (e) { return 0; }
 }
+function dayReadCount(all, key){
+  try {
+    return (all || []).filter(function (r) { return (r.ts || '').slice(0, 10) === key; }).length;
+  } catch (e) { return 0; }
+}
 function renderHistory(){
   const el = $('historyList'); if (!el) return;
   const all = readJSON(READINGS_KEY, []);
   if (!all.length){ el.innerHTML = '<p class="empty">아직 기록이 없어요. 카드를 뽑으면 여기에 쌓입니다.</p>'; return; }
   const mAvg = weekMoodAvg(all);
+  const t = todayKey();
+  let y = t;
+  try {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    y = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  } catch (e) {}
+  const todayN = dayReadCount(all, t);
+  const ydayN = dayReadCount(all, y);
+  const delta = todayN - ydayN;
+  const goal = 1;
+  const gPct = Math.min(100, Math.round(todayN / goal * 100));
   el.innerHTML =
     `<div class="row" style="margin-bottom:10px;gap:8px;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-quiet" id="exportReadings">⬇ 기록 백업</button>
       <label class="btn-quiet" style="cursor:pointer">⬆ 복원<input id="importReadings" type="file" accept="application/json,.json" style="display:none"/></label>
       <button type="button" class="btn-quiet" id="delLastReading">↩ 최근 1건 삭제</button>
       ${mAvg ? `<span class="hint">7일 기분 평균 ${mAvg}/5</span>` : ''}
-    </div>` +
+      <span class="hint">오늘 ${todayN}/${goal}${todayN >= goal ? ' ✓' : ''} · 전일 ${delta >= 0 ? '+' : ''}${delta}</span>
+    </div>
+    <div style="height:6px;background:#1c1826;border-radius:4px;margin:0 0 12px;overflow:hidden"><i style="display:block;height:100%;width:${gPct}%;background:linear-gradient(90deg,#c4b5fd,#e0b552)"></i></div>` +
     all.slice(0, 20).map(r => {
     const names = r.cards.map(c => esc(c.ko) + (c.reversed ? '<i>역</i>' : '')).join(' · ');
     const mood = r.mood ? `<span class="mood-dot" title="그때의 느낌 ${r.mood}/5">${'●'.repeat(r.mood)}${'○'.repeat(5-r.mood)}</span>` : '';
