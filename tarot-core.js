@@ -102,6 +102,15 @@ function drawSpread(n){
   });
 }
 
+// 받침 유무로 주격 조사(이/가) 결정 — 한국어 문장이 깨지지 않게 (죽음이/연인이 vs 악마가/달이)
+function subjectJosa(word){
+  if (!word) return '가';
+  const last = word.charCodeAt(word.length - 1);
+  if (last < 0xAC00 || last > 0xD7A3) return '가'; // 한글 아니면 기본
+  const hasBatchim = (last - 0xAC00) % 28 !== 0;
+  return hasBatchim ? '이' : '가';
+}
+
 // 카드 × 포지션 × 방향을 엮은 실제 해석 문장 (얕은 점수 아님)
 function interpretCard(c){
   const dir = c.reversed ? "역방향" : "정방향";
@@ -124,7 +133,7 @@ function synthesize(spread){
     const core = spread[0], cross = spread[1], hopes = spread[8], outcome = spread[9];
     const crossVerb = cross.reversed ? "가로막는 힘" : "함께 흐르는 힘";
     return `중심에는 ${core.ko}(${core.reversed?'역':'정'}) — ${core.gist}. `
-      + `이를 ${crossVerb}으로 ${cross.ko}가 교차한다. `
+      + `이를 ${crossVerb}으로 ${cross.ko}${subjectJosa(cross.ko)} 교차한다. `
       + `내면의 ${hopes.ko}는 기대와 불안을 동시에 비추고, `
       + `이 모든 흐름은 ${outcome.ko}(${outcome.reversed?'역방향':'정방향'})로 매듭지어진다 — ${outcome.gist}. `
       + `마지막 조언: ${outcome.advice}.`;
