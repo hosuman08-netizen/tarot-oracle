@@ -209,6 +209,10 @@ button{ font:inherit; cursor:pointer; }
 .saved{ font-size:.72rem; color:var(--gold-dim); }
 
 /* ── 버튼 ─────────────────────────────────────────────── */
+.share-peak{ margin-top:calc(var(--g)*2); padding:calc(var(--g)*1.5) calc(var(--g)*2);
+  border:1px solid var(--gold); border-radius:var(--r); background:var(--bg-soft); text-align:center; }
+.share-peak p{ margin:0 0 var(--g); font-size:.86rem; color:var(--text); }
+.share-peak-row{ display:flex; gap:var(--g); justify-content:center; flex-wrap:wrap; }
 .actions{ display:flex; flex-wrap:wrap; gap:var(--g); margin-top:calc(var(--g)*3); }
 .btn-primary{ background:var(--gold); color:#0b0908; border:1px solid var(--gold);
   border-radius:var(--r); padding:11px 20px; font-weight:600; font-size:.88rem; transition:opacity .18s; }

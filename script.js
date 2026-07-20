@@ -165,8 +165,37 @@ function drawReading(spreadKey){
   bumpStreak();
   renderMirror();
   renderHistory();
+  offerSharePeak(spread, key);
 
   if (window.legionTrack) legionTrack('activate');
+}
+
+// share-at-peak: 뽑자마자 공유 의도 최고 — Contagious Emotion + Niobe peak share
+function offerSharePeak(spread, key){
+  const host = $('spread');
+  if (!host) return;
+  let peak = $('sharePeak');
+  if (!peak){
+    peak = document.createElement('div');
+    peak.id = 'sharePeak';
+    peak.className = 'share-peak';
+    const actions = host.querySelector('.share-row, .actions, #shareBtn');
+    if (actions && actions.parentNode) actions.parentNode.insertBefore(peak, actions);
+    else host.appendChild(peak);
+  }
+  const major = (spread || []).filter(c => c && c.suit === 'major').length;
+  const line = major >= 2
+    ? '메이저 카드가 강해요 — 지금 이미지로 남기면 가장 선명해요'
+    : '리딩이 완성됐어요 — 한 장으로 공유해볼까요?';
+  peak.innerHTML = `<p>✨ ${line}</p>
+    <div class="share-peak-row">
+      <button type="button" class="btn-primary" id="sharePeakBtn">결과 이미지 공유</button>
+      <button type="button" class="btn-quiet" id="sharePeakLater">나중에</button>
+    </div>`;
+  peak.hidden = false;
+  const b = $('sharePeakBtn'); if (b) b.onclick = () => { if (window.legionTrack) try{legionTrack('share_peak');}catch(e){} shareReading(); };
+  const l = $('sharePeakLater'); if (l) l.onclick = () => { peak.hidden = true; };
+  if (window.legionTrack) try { legionTrack('share_peak_shown', { key, major }); } catch(e){}
 }
 // 하위 호환 — 예전 버튼이 부르던 이름
 function drawTarot(n){ drawReading(n === 3 ? 'ppf' : n === 10 ? 'celtic' : n === 1 ? 'one' : n); }
