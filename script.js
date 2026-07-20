@@ -253,13 +253,25 @@ function bumpStreak(){
   writeJSON(STREAK_KEY, s);
   renderStreak();
 }
+function midnightLeftLabel(){
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+  const rem = Math.max(0, Math.floor((end - now) / 60000));
+  const hh = Math.floor(rem / 60), mm = rem % 60;
+  return (hh ? hh + '시간 ' : '') + mm + '분';
+}
 function renderStreak(){
   const el = $('streak'); if (!el) return;
   const s = readJSON(STREAK_KEY, { last:null, count:0, best:0 });
   const all = readJSON(READINGS_KEY, []);
-  if (!all.length){ el.textContent = '아직 기록이 없어요 — 첫 카드를 뽑아보세요'; return; }
+  const clock = midnightLeftLabel();
+  if (!all.length){
+    el.textContent = '아직 기록이 없어요 — 첫 카드를 뽑아보세요 · 오늘 창 ' + clock;
+    return;
+  }
   el.textContent = `${s.count || 0}일 연속 · 지금까지 ${all.length}번의 리딩`
-    + (s.best > (s.count||0) ? ` · 최장 ${s.best}일` : '');
+    + (s.best > (s.count||0) ? ` · 최장 ${s.best}일` : '')
+    + ` · 일일카드 리셋 ${clock}`;
 }
 
 // ── 리딩 기록 ───────────────────────────────────────────────────────────────
@@ -753,6 +765,7 @@ function init(){
 
   renderDaily();
   renderStreak();
+  setInterval(function () { try { renderStreak(); } catch (e) {} }, 60000);
   renderMirror();
   renderHistory();
   renderLibrary('all');
