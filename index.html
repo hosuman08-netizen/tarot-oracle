@@ -193,5 +193,7 @@
   <script src="./script.js"></script>
   <script>window.LEGION_APP='tarot-oracle';window.LEGION_ANALYTICS_URL='https://legion-analytics.hoyashi95.workers.dev';</script>
   <script src="legion-beacon.js"></script>
+<div id="fomoClock" style="text-align:center;font-size:11px;opacity:.75;margin:8px">오늘 창</div>
+<script>(function(){function tick(){var e=new Date();e.setHours(24,0,0,0);var ms=Math.max(0,e-Date.now());var h=Math.floor(ms/36e5),m=Math.floor(ms%36e5/6e4);var el=document.getElementById('fomoClock');if(el)el.textContent='오늘 창 '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+' · 엔터테인먼트';}tick();setInterval(tick,3e4);})();</script>
 </body>
 </html>
