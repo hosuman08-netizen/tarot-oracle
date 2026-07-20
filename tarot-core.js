@@ -111,37 +111,59 @@ function subjectJosa(word){
   return hasBatchim ? '이' : '가';
 }
 
-// 카드 × 포지션 × 방향을 엮은 실제 해석 문장 (얕은 점수 아님)
-function interpretCard(c){
-  const dir = c.reversed ? "역방향" : "정방향";
-  return `${c.ko}(${c.name}) ${dir} — [${c.position}] ${c.role}: ${c.gist}. ${c.advice}.`;
+// 초점(focus)별로 카드가 비추는 결이 달라진다: 일반=gist, 사랑=love, 일·재물=work
+// 데크가 이미 카드마다 love/work 맥락을 갖고 있으므로 실제로 다른 문장이 나온다.
+function focusMeaning(c, focus){
+  if (focus === 'love' && c.love) return c.love;
+  if (focus === 'work' && c.work) return c.work;
+  return c.gist;
 }
 
-// 스프레드 전체를 하나의 흐름으로 종합 (서사)
-function synthesize(spread){
+// 카드 × 포지션 × 방향 × 초점을 엮은 실제 해석 문장 (얕은 점수 아님)
+function interpretCard(c, focus){
+  const dir = c.reversed ? "역방향" : "정방향";
+  const mean = focusMeaning(c, focus);
+  return `${c.ko}(${c.name}) ${dir} — [${c.position}] ${c.role}: ${mean}. ${c.advice}.`;
+}
+
+// 받침 유무로 '으로/로' 결정 — "힘으로"(받침O) vs "전차로"(받침X), 단 ㄹ받침은 '로'
+function euro(word){
+  if (!word) return '로';
+  const last = word.charCodeAt(word.length - 1);
+  if (last < 0xAC00 || last > 0xD7A3) return '로';
+  const jong = (last - 0xAC00) % 28;
+  return (jong === 0 || jong === 8) ? '로' : '으로'; // 8 = ㄹ
+}
+
+const FOCUS_LEAD = { love:'사랑의 결로 보면 ', work:'일·재물의 결로 보면 ' };
+
+// 스프레드 전체를 하나의 흐름으로 종합 (서사). focus에 따라 love/work 맥락으로 읽힌다.
+function synthesize(spread, focus){
+  const lead = FOCUS_LEAD[focus] || '';
+  const M = (c) => focusMeaning(c, focus);
   if (spread.length === 1){
     const c = spread[0];
-    return `오늘의 결은 ${c.ko}(${c.reversed?'역방향':'정방향'}). ${c.gist}. 한 걸음을 정한다면 — ${c.advice}.`;
+    return `${lead}오늘의 결은 ${c.ko}(${c.reversed?'역방향':'정방향'}). ${M(c)}. 한 걸음을 정한다면 — ${c.advice}.`;
   }
   if (spread.length === 3){
     const [p,now,f] = spread;
-    return `과거의 ${p.ko}가 남긴 ${p.theme}에서 출발해, 지금 ${now.ko}로 ${now.gist.replace(/\.$/,'')}. `
-      + `이 흐름은 ${f.ko}(${f.reversed?'역방향':'정방향'})로 향한다 — ${f.gist}. `
+    return `${lead}과거의 ${p.ko}${subjectJosa(p.ko)} 남긴 ${p.theme}에서 출발해, 지금 ${now.ko}${euro(now.ko)} ${M(now).replace(/\.$/,'')}. `
+      + `이 흐름은 ${f.ko}(${f.reversed?'역방향':'정방향'})로 향한다 — ${M(f)}. `
       + `핵심 조언: ${now.advice}, 그리고 ${f.advice}.`;
   }
   if (spread.length === 10){
     const core = spread[0], cross = spread[1], hopes = spread[8], outcome = spread[9];
     const crossVerb = cross.reversed ? "가로막는 힘" : "함께 흐르는 힘";
-    return `중심에는 ${core.ko}(${core.reversed?'역':'정'}) — ${core.gist}. `
+    return `${lead}중심에는 ${core.ko}(${core.reversed?'역':'정'}) — ${M(core)}. `
       + `이를 ${crossVerb}으로 ${cross.ko}${subjectJosa(cross.ko)} 교차한다. `
       + `내면의 ${hopes.ko}는 기대와 불안을 동시에 비추고, `
-      + `이 모든 흐름은 ${outcome.ko}(${outcome.reversed?'역방향':'정방향'})로 매듭지어진다 — ${outcome.gist}. `
+      + `이 모든 흐름은 ${outcome.ko}(${outcome.reversed?'역방향':'정방향'})로 매듭지어진다 — ${M(outcome)}. `
       + `마지막 조언: ${outcome.advice}.`;
   }
-  return spread.map(interpretCard).join(' ');
+  return spread.map(c=>interpretCard(c, focus)).join(' ');
 }
 
-const TarotCore = { DECK, SPREADS, shuffle, drawSpread, interpretCard, synthesize };
+const TarotCore = { DECK, SPREADS, shuffle, drawSpread, interpretCard, synthesize, focusMeaning };
 if (typeof module !== 'undefined' && module.exports) module.exports = TarotCore;
 global.TarotCore = TarotCore;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -24,6 +24,12 @@ h1 { font-size:2.05rem; margin:0; color:var(--gold); letter-spacing:-0.5px; } /*
 .reading-list b { color:var(--gold); }
 button { background:#c5a46e; color:#0a0806; border:none; padding:9px 14px; border-radius:5px; margin:4px; font-weight:600; font-size:0.89rem; cursor:pointer; }
 .fomo { font-size:0.72rem; background:#15120f; padding:4px 11px; border-radius:999px; display:inline-block; border:1px solid var(--gold); }
+/* 초점 선택 — 알약 토글. 선택된 것만 금빛으로 도드라지게(SENSE: 명확한 선택 상태) */
+.focus-pick { display:flex; gap:calc(var(--grid)*0.75); flex-wrap:wrap; margin:calc(var(--grid)*0.5) 0 calc(var(--grid)*2); }
+.focus-opt { font-size:0.8rem; color:#c9bda6; border:1px solid #3a2f22; border-radius:999px; padding:5px 13px; cursor:pointer; transition:border-color .18s, background .18s, color .18s; user-select:none; }
+.focus-opt input { position:absolute; opacity:0; width:0; height:0; }
+.focus-opt:has(input:checked) { border-color:var(--gold); background:#1c170f; color:var(--gold); }
+.focus-opt:hover { border-color:#6b5a3a; }
 .cross { margin:calc(var(--grid)*3) 0; text-align:center; }
 .relic { border-color:#a38a66; background:#15120f; }
 #tarot-canvas { border:1px solid #3a2f22; border-radius:6px; background:#0a0806; display:block; margin:var(--grid) auto; }

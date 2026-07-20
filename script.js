@@ -15,12 +15,20 @@ function updateFomo() {
 
 // 실제 타로 코어(tarot-core.js)로 드로우 — 중복없는 셔플 + 정/역방향 + 포지션 해석
 let lastSpread = null;
+let lastFocus = 'general';
+// 현재 선택된 초점(일반/사랑/일·재물) 읽기
+function currentFocus() {
+  const el = document.querySelector('input[name="focus"]:checked');
+  return el ? el.value : 'general';
+}
 function drawTarot(n) {
   if (!window.TarotCore) { alert('타로 엔진 로딩 중입니다. 잠시 후 다시.'); return; }
   const useBoost = document.getElementById('p20boost') && document.getElementById('p20boost').checked;
   LilithTarot.update();
   const saju = parseInt((JSON.parse(localStorage.getItem('fateCodex')||'[]')[0]||{score:60}).score||60);
 
+  const focus = currentFocus();
+  lastFocus = focus;
   // 진짜 셔플 드로우: 카드 중복 없음, 각 카드 정/역방향, 포지션별 역할 부여
   const spread = TarotCore.drawSpread(n);
   lastSpread = spread;
@@ -31,18 +39,19 @@ function drawTarot(n) {
       ? '<span class="card-rev" title="역방향">⟲ 역방향</span>'
       : '<span class="card-up" title="정방향">정방향</span>';
     const boostTag = (useBoost && c.name) ? `<span class="card-boost" title="사주 연동">사주 공명</span>` : '';
+    const mean = TarotCore.focusMeaning(c, focus);
     return `<div class="card${c.reversed?' is-reversed':''}">`
       + `<span class="card-pos">${c.position}</span>`
       + `<span class="card-name">${c.ko} · ${c.name}</span>`
       + `<span class="card-dir">${dirBadge}${boostTag}</span>`
-      + `<span class="card-mean">${c.gist}</span>`
+      + `<span class="card-mean">${mean}</span>`
       + `</div>`;
   }).join('');
 
-  // 실제 종합 해석 서사 (카드×포지션×방향을 엮음)
-  const narrative = TarotCore.synthesize(spread);
-  // 개별 카드 조언 목록
-  const perCard = spread.map(c => `<li><b>${c.position}</b> — ${TarotCore.interpretCard(c).replace(/^[^—]+— /,'')}</li>`).join('');
+  // 실제 종합 해석 서사 (카드×포지션×방향×초점을 엮음)
+  const narrative = TarotCore.synthesize(spread, focus);
+  // 개별 카드 조언 목록 (초점 반영)
+  const perCard = spread.map(c => `<li><b>${c.position}</b> — ${TarotCore.interpretCard(c, focus).replace(/^[^—]+— /,'')}</li>`).join('');
   const boostLine = useBoost
     ? `<div style="font-size:0.68rem;color:#a8c;margin-top:4px">사주 흐름(${saju}) 함께 읽기: 각 카드의 조언을 오늘의 사주 흐름과 겹쳐 읽어보세요.</div>` : '';
 
@@ -70,9 +79,9 @@ function spreadScore(spread){
 
 function voiceTarot() {
   if (!lastSpread) { alert('타로 먼저 뽑으세요.'); return; }
-  // 실제 리딩 서사를 음성으로 — 카드/포지션/방향을 또박또박
-  const parts = lastSpread.map(c => `${c.position}, ${c.ko} ${c.reversed?'역방향':'정방향'}. ${c.gist}.`);
-  const text = window.TarotCore ? TarotCore.synthesize(lastSpread) : parts.join(' ');
+  // 실제 리딩 서사를 음성으로 — 카드/포지션/방향/초점을 또박또박
+  const parts = lastSpread.map(c => `${c.position}, ${c.ko} ${c.reversed?'역방향':'정방향'}. ${window.TarotCore?TarotCore.focusMeaning(c,lastFocus):c.gist}.`);
+  const text = window.TarotCore ? TarotCore.synthesize(lastSpread, lastFocus) : parts.join(' ');
   const u = new SpeechSynthesisUtterance(text);
   u.lang='ko-KR'; u.rate=0.96; speechSynthesis.speak(u);
 }
