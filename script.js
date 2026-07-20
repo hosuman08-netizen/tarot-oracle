@@ -625,6 +625,33 @@ function exportReadingsJSON(){
     if (window.legionTrack) legionTrack('export', { n: all.length });
   } catch (e) {}
 }
+function importReadingsJSON(file){
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = function () {
+    try {
+      const p = JSON.parse(r.result);
+      const arr = Array.isArray(p) ? p : (p && Array.isArray(p.readings) ? p.readings : null);
+      if (!arr || !arr.length) throw new Error('empty');
+      const cur = readJSON(READINGS_KEY, []);
+      const ids = {};
+      cur.forEach(function (x) { if (x && x.id) ids[x.id] = 1; });
+      const merged = cur.slice();
+      arr.forEach(function (x) {
+        if (!x) return;
+        if (x.id && ids[x.id]) return;
+        if (x.id) ids[x.id] = 1;
+        merged.push(x);
+      });
+      writeJSON(READINGS_KEY, merged.slice(0, 200));
+      renderHistory(); renderMirror(); renderStreak();
+      if (window.legionTrack) legionTrack('import', { n: arr.length });
+    } catch (e) {
+      alert('JSON 형식을 확인해 주세요 (백업 파일 권장)');
+    }
+  };
+  r.readAsText(file);
+}
 function weekMoodAvg(all){
   try {
     const cut = Date.now() - 7 * 86400000;
@@ -644,6 +671,7 @@ function renderHistory(){
   el.innerHTML =
     `<div class="row" style="margin-bottom:10px;gap:8px;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-quiet" id="exportReadings">⬇ 기록 백업</button>
+      <label class="btn-quiet" style="cursor:pointer">⬆ 복원<input id="importReadings" type="file" accept="application/json,.json" style="display:none"/></label>
       <button type="button" class="btn-quiet" id="delLastReading">↩ 최근 1건 삭제</button>
       ${mAvg ? `<span class="hint">7일 기분 평균 ${mAvg}/5</span>` : ''}
     </div>` +
@@ -660,6 +688,8 @@ function renderHistory(){
   }).join('');
   const xb = $('exportReadings');
   if (xb) xb.onclick = exportReadingsJSON;
+  const ir = $('importReadings');
+  if (ir) ir.onchange = function () { if (ir.files && ir.files[0]) importReadingsJSON(ir.files[0]); ir.value = ''; };
   const dl = $('delLastReading');
   if (dl) dl.onclick = function () {
     try {
