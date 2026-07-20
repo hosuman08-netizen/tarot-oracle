@@ -21,6 +21,7 @@ let lastNarrative = '';
 
 // ── 저장 유틸 (localStorage가 막혀 있어도 앱이 죽지 않게) ────────────────────
 function readJSON(key, fallback){
+  try{var _tp=+(localStorage.getItem('tarot_pulls')||0)+1;localStorage.setItem('tarot_pulls',_tp);}catch(e){}
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
   catch(e){ return fallback; }
 }
