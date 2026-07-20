@@ -555,6 +555,7 @@ function euro(word){
   const e = endJong(word);
   return (!e.batchim || e.rieul) ? '로' : '으로'; // ㄹ받침은 '로'
 }
+function gwaJosa(word){ return hasBatchim(word) ? '과' : '와'; } // 받침 있으면 '과'
 // 문장 끝 단어에 조사를 붙인다 — 서사 조립용
 function withJosa(word, kind){
   if (kind === 'subject') return word + subjectJosa(word);
@@ -812,12 +813,170 @@ function reflect(readings){
     topElKo: topEl ? ELEMENTS[topEl].ko : '—', notes };
 }
 
+// ── 리더 페르소나 (Reader Persona) ───────────────────────────────────────────
+// 같은 카드·같은 의미·같은 판정을 다른 '목소리'로 건넨다. 카드·해석·예아니오·
+// 원소상성은 절대 바꾸지 않고 말투(연출)만 바꾼다 — 정직이 방패다.
+// valence(밝음/섞임/무거움)는 스프레드의 정·역 비율과 카드 자체 길흉(fav)에서
+// 결정적으로 계산한다. 무작위·가짜 없음.
+function readingValence(spread){
+  if (!spread || !spread.length) return { bucket:'mixed', up:50, score:0.5 };
+  let up = 0, fav = 0, n = 0;
+  spread.forEach(c => {
+    fav += (c.reversed ? -(c.fav||0) : (c.fav||0));
+    if (c.noOrientation) return;
+    n++; if (!c.reversed) up++;
+  });
+  const upRatio = n ? up / n : 0.5;
+  const score = upRatio + (fav / Math.max(1, spread.length)) * 0.25;
+  const bucket = score >= 0.72 ? 'bright' : score <= 0.44 ? 'heavy' : 'mixed';
+  return { bucket, up: Math.round(upRatio * 100), score: Math.round(score * 100) / 100 };
+}
+
+const READERS = {
+  luna: {
+    key:'luna', name:'루나', tag:'직관형 · 이미지로 읽는 리더', glyph:'☾', accent:'#b8a6d6',
+    open(v){ return v.bucket === 'bright'
+        ? '카드를 펼치자 결이 맑게 흘러요. 떠오르는 장면을 따라가 볼게요.'
+        : v.bucket === 'heavy'
+        ? '카드가 조금 무겁게 내려앉았어요. 서두르지 않고 안쪽부터 들여다볼게요.'
+        : '카드 사이에 옅은 안개가 껴 있어요. 또렷한 것부터 하나씩 짚어 볼게요.'; },
+    close(v){ return v.bucket === 'bright'
+        ? '흐르는 기운이 당신 편이에요. 그 느낌을 오래 붙잡아 두세요.'
+        : v.bucket === 'heavy'
+        ? '지금의 무게도 곧 형태를 바꿔요. 느껴지는 대로, 당신을 먼저 돌보세요.'
+        : '아직 모양이 다 잡히지 않았어요. 마음이 기우는 쪽을 믿어 보세요.'; },
+    answerLead:'한 장을 더 얹어 보니 '
+  },
+  sol: {
+    key:'sol', name:'솔', tag:'다정한 상담가 · 곁에서 함께 보는 리더', glyph:'☀', accent:'#e0b552',
+    open(v){ return v.bucket === 'bright'
+        ? '좋아요, 같이 볼까요. 카드가 꽤 든든한 이야기를 건네네요.'
+        : v.bucket === 'heavy'
+        ? '괜찮아요, 천천히 봐요. 무거운 카드가 나와도 당신을 탓하는 게 아니에요.'
+        : '자, 함께 하나씩 풀어 볼게요. 조급해하지 않아도 돼요.'; },
+    close(v){ return v.bucket === 'bright'
+        ? '잘 하고 있어요. 이 흐름을 당신답게 이어가면 돼요.'
+        : v.bucket === 'heavy'
+        ? '힘든 자리였어요. 오늘은 딱 한 가지만 해도 충분해요.'
+        : '정답을 지금 다 낼 필요 없어요. 한 걸음이면 돼요.'; },
+    answerLead:'덧붙이자면 '
+  },
+  hyeon: {
+    key:'hyeon', name:'현', tag:'전통 리더 · 덱의 원문에 기대는 리더', glyph:'✦', accent:'#c5a46e',
+    open(v){ return '라이더-웨이트 원문의 결을 그대로 짚습니다. '
+        + (v.bucket === 'bright' ? '정방향 세력이 우세합니다.'
+         : v.bucket === 'heavy' ? '역방향과 도전 카드의 무게가 큽니다.'
+         : '정·역의 무게가 팽팽합니다.'); },
+    close(){ return '카드는 확정이 아니라 지금의 기울기를 말합니다. 조건이 바뀌면 배치도 바뀝니다.'; },
+    answerLead:'보충 카드로 다시 읽으면 '
+  },
+  do: {
+    key:'do', name:'도', tag:'직설형 · 돌려 말하지 않는 리더', glyph:'◆', accent:'#d98c6e',
+    open(v){ return v.bucket === 'bright'
+        ? '돌려 말 안 할게요. 지금 판, 나쁘지 않아요.'
+        : v.bucket === 'heavy'
+        ? '솔직히 말할게요. 지금 흐름은 순탄하지 않아요. 그래도 길은 있어요.'
+        : '있는 그대로 볼게요. 좋다 나쁘다 단정할 자리는 아니에요.'; },
+    close(v){ return v.bucket === 'bright'
+        ? '핑계 대지 말고 지금 움직이세요.'
+        : v.bucket === 'heavy'
+        ? '버틴다고 저절로 풀리진 않아요. 하나는 바꿔야 해요.'
+        : '결정을 미루는 게 지금은 가장 나쁜 선택이에요.'; },
+    answerLead:'한 장 더 까보면 '
+  }
+};
+function readerFor(key){ return READERS[key] || READERS.luna; }
+
+// ── 후속 카드 (Clarifier / 대화 모드) ────────────────────────────────────────
+// 정통 실무에서 헷갈리는 자리에 '보충 한 장'을 더 뽑는 관행. 이미 나온 카드는
+// 덱에서 빼고(중복 없이) 한 장을 뽑아, 겨눈 자리·카드와 원소상성으로 겹쳐 읽는다.
+// 타로는 같은 질문을 무한히 되묻지 않으므로 호출부에서 회수 상한을 둔다.
+const CLARIFY_ANGLES = {
+  general: [
+    { id:'missing', label:'내가 놓친 것',    lead:'지금 흐름에서 당신이 놓치고 있는 것은' },
+    { id:'core',    label:'가장 중요한 하나', lead:'이 안에서 가장 중요한 한 가지는' },
+    { id:'step',    label:'다음 한 걸음',     lead:'다음에 내디딜 한 걸음은' }
+  ],
+  love: [
+    { id:'their', label:'상대의 마음',      lead:'상대의 마음 쪽에서 보태지는 결은' },
+    { id:'block', label:'우리 사이 걸림돌',  lead:'두 사람 사이를 막고 있는 것은' },
+    { id:'step',  label:'다음 한 걸음',      lead:'관계에서 내디딜 한 걸음은' }
+  ],
+  work: [
+    { id:'hidden', label:'드러나지 않은 변수', lead:'아직 드러나지 않은 변수는' },
+    { id:'risk',   label:'주의할 것',         lead:'여기서 주의해야 할 것은' },
+    { id:'move',   label:'다음 수',           lead:'다음에 둘 한 수는' }
+  ],
+  health: [
+    { id:'body',   label:'몸이 보내는 신호',  lead:'몸이 지금 보내는 신호는' },
+    { id:'care',   label:'돌봐야 할 것',      lead:'지금 돌봐야 할 것은' },
+    { id:'rhythm', label:'되찾을 리듬',       lead:'되찾아야 할 리듬은' }
+  ]
+};
+function clarifyAngles(focus){ return CLARIFY_ANGLES[focus] || CLARIFY_ANGLES.general; }
+
+function drawClarifier(excludeIds, opts){
+  opts = opts || {};
+  const rnd = opts.rnd || Math.random;
+  const useRev = opts.reversals !== false;
+  const rate = typeof opts.reversalRate === 'number' ? opts.reversalRate : 0.30;
+  const ex = {}; (excludeIds || []).forEach(id => { ex[id] = 1; });
+  const pool = DECK.filter(c => !ex[c.id]);
+  if (!pool.length) return null;
+  const card = shuffle(pool, rnd)[0];
+  const reversed = useRev && rnd() < rate;
+  const face = reversed ? card.rev : card.up;
+  const revMode = reversed ? pickReversalMode(card, rnd) : null;
+  return {
+    id: card.id, name: card.name, ko: card.ko, suit: card.suit, num: card.num, court: card.court,
+    astro: card.astro, fav: card.fav, sep: card.sep, el: cardElement(card),
+    numArc: card.numArc, courtArc: card.courtArc,
+    reversed, noOrientation: false, revMode,
+    gist: face.gist, theme: face.theme, advice: face.advice, love: face.love, work: face.work,
+    position: '보충', role: '보충 한 장', posIndex: -1
+  };
+}
+// clar: 뽑은 보충 카드 / target: 그 보충이 겨눈 원래 카드(없으면 전체) / angle: 물음 각도
+function clarify(clar, target, focus, angle){
+  const lead = (angle && angle.lead) ? angle.lead : '이 자리에 보태지는 결은';
+  const cm = focusMeaning(clar, focus).replace(/\.$/, '');
+  let s = `${lead} ${clar.ko}(${dirShort(clar)}) — ${cm}.`;
+  if (target && target.el && clar.el){
+    const d = dignity(clar.el, target.el);
+    const rel = d.key === 'same'   ? `${target.ko}${objectJosa(target.ko)} 같은 원소로 크게 밀어 올린다`
+              : d.key === 'opposed'? `${target.ko}의 힘을 원소상 깎아, 방향을 다시 보라 말한다`
+              : d.key === 'friendly'? `${target.ko}${gwaJosa(target.ko)} 우호적으로 맞물려 서로를 돕는다`
+              : `${target.ko} 곁에 나란히 놓인다`;
+    s += ` 앞서 나온 ${target.ko}${gwaJosa(target.ko)} 겹쳐 보면, ${rel}.`;
+  }
+  return s + ` ${clar.advice}.`;
+}
+
+// ── 오늘의 카드 성찰 프롬프트 ────────────────────────────────────────────────
+// 수동적 표시를 넘어, 카드가 사용자에게 되묻게 한다(결정적 매핑).
+const DAILY_PROMPT_BY_SUIT = {
+  major:'오늘 이 큰 흐름은 당신의 어떤 선택에서 모습을 드러낼까요?',
+  W:'오늘 어디에 당신의 열정과 에너지를 쓰고 싶나요?',
+  C:'오늘 당신의 감정은 어디로 향하고 있나요?',
+  S:'오늘 머릿속을 가장 크게 차지한 생각은 무엇인가요?',
+  P:'오늘 당신의 몸과 일상은 무엇을 필요로 하나요?'
+};
+function dailyPrompt(card){
+  if (!card) return '오늘 이 카드는 당신에게 무엇을 묻고 있나요?';
+  const base = DAILY_PROMPT_BY_SUIT[card.suit === 'major' ? 'major' : card.suit]
+             || '오늘 이 카드는 당신에게 무엇을 묻고 있나요?';
+  const tail = card.reversed ? ' 막혀 있다고 느끼는 곳부터 짚어 보세요.' : ' 떠오르는 대로 한 줄 남겨 보세요.';
+  return base + tail;
+}
+
 const TarotCore = {
   SCHOOL, DECK, MAJORS, SPREADS, SUITS, ELEMENTS, NUMBERS, COURT,
   REVERSAL_MODES, FOOLS_JOURNEY, FOCUS_LABEL,
   shuffle, seededRandom, drawSpread, cardElement, dignity, triadDignity,
   interpretCard, cardDetail, synthesize, focusMeaning, yesNoVerdict,
-  directionLabel, reflect, subjectJosa, objectJosa, topicJosa, euro, withJosa
+  directionLabel, reflect, subjectJosa, objectJosa, topicJosa, euro, withJosa,
+  READERS, readerFor, readingValence,
+  CLARIFY_ANGLES, clarifyAngles, drawClarifier, clarify, dailyPrompt
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = TarotCore;
 global.TarotCore = TarotCore;

@@ -18,6 +18,13 @@ let lastFocus = 'general';
 let lastSpreadKey = 'one';
 let lastQuestion = '';
 let lastNarrative = '';
+let lastReader = null;      // 이번 리딩을 읽은 리더 페르소나
+let lastValence = null;     // 스프레드에서 계산된 밝음/무거움
+// 후속(보충) 카드 · 대화 상태 — 리딩 한 건당 초기화
+const MAX_CLARIFY = 3;
+let convoClarifiers = [];   // 이번 리딩에서 뽑은 보충 카드들
+let convoAngle = null;      // 선택된 물음 각도
+let convoTargetIdx = -1;    // 보충이 겨눈 자리(-1 = 전체/마지막)
 
 // ── 저장 유틸 (localStorage가 막혀 있어도 앱이 죽지 않게) ────────────────────
 function readJSON(key, fallback){
@@ -33,7 +40,11 @@ function todayKey(){
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 function prefs(){
-  return Object.assign({ reversals:true, reversalRate:0.30 }, readJSON(PREFS_KEY, {}));
+  return Object.assign({ reversals:true, reversalRate:0.30, reader:'luna' }, readJSON(PREFS_KEY, {}));
+}
+function currentReader(){
+  const el = document.querySelector('input[name="reader"]:checked');
+  return el ? el.value : (prefs().reader || 'luna');
 }
 function setPref(k, v){ const p = prefs(); p[k] = v; writeJSON(PREFS_KEY, p); }
 
@@ -146,6 +157,11 @@ function drawReading(spreadKey){
   const narrative = TarotCore.synthesize(spread, lastFocus, key);
   lastNarrative = narrative;
 
+  // 리더 페르소나 — 말투(연출)만 입힌다. 카드·해석·판정은 그대로.
+  const reader = TarotCore.readerFor(currentReader());
+  const val = TarotCore.readingValence(spread);
+  lastReader = reader; lastValence = val;
+
   let extra = '';
   if (key === 'yesno'){
     const v = TarotCore.yesNoVerdict(spread);
@@ -157,7 +173,15 @@ function drawReading(spreadKey){
   ).join('');
 
   $('interp').innerHTML = extra
-    + `<p class="narrative">${esc(narrative)}</p>`
+    + `<div class="reading-voice" style="--vaccent:${esc(reader.accent)}">
+         <div class="voice-head">
+           <span class="voice-glyph">${esc(reader.glyph)}</span>
+           <b>${esc(reader.name)}</b><small>${esc(reader.tag)}</small>
+         </div>
+         <p class="voice-line voice-open">${esc(reader.open(val))}</p>
+         <p class="narrative">${esc(narrative)}</p>
+         <p class="voice-line voice-close">${esc(reader.close(val))}</p>
+       </div>`
     + `<h3 class="block-label">자리별로 읽기</h3>`
     + `<ul class="reading-list">${perCard}</ul>`
     + sajuLineHTML(spread);
@@ -167,6 +191,7 @@ function drawReading(spreadKey){
 
   drawAura(spread);
   resetJournalForm();
+  renderConversation(spread, key);
   saveReading(spread, key, narrative);
   bumpStreak();
   renderMirror();
@@ -174,6 +199,128 @@ function drawReading(spreadKey){
   offerSharePeak(spread, key);
 
   if (window.legionTrack) legionTrack('activate');
+}
+
+// ── 후속 카드 · 대화 모드 ────────────────────────────────────────────────────
+// 리딩을 한 방향으로 끝내지 않고, 헷갈리는 자리에 '보충 한 장'을 더 얹어 대화처럼
+// 이어간다. 이미 나온 카드는 덱에서 빼고(중복 없음), 겨눈 자리와 원소상성으로 겹쳐
+// 읽는다. 리더 페르소나가 그 보충을 자기 목소리로 건넨다. 상한 3장(정통 관행).
+function renderConversation(spread, key){
+  convoClarifiers = [];
+  convoAngle = null;
+  convoTargetIdx = spread.length > 1 ? spread.length - 1 : 0;  // 기본: 결과/방향 자리
+
+  let host = $('convo');
+  if (!host){
+    host = document.createElement('div');
+    host.id = 'convo';
+    host.className = 'convo';
+    const interp = $('interp');
+    if (interp && interp.parentNode) interp.parentNode.insertBefore(host, interp.nextSibling);
+    else $('spread').appendChild(host);
+  }
+
+  const angles = TarotCore.clarifyAngles(lastFocus);
+  convoAngle = angles[0];
+
+  const angleChips = angles.map((a,i) =>
+    `<button type="button" class="clarify-angle${i===0?' on':''}" data-angle="${esc(a.id)}">${esc(a.label)}</button>`
+  ).join('');
+
+  // 여러 장 스프레드는 어느 자리에 보충할지 고를 수 있게 (한 장이면 생략)
+  let targetPick = '';
+  if (spread.length > 1){
+    const opts = spread.map((c,i) =>
+      `<button type="button" class="clarify-pos${i===convoTargetIdx?' on':''}" data-pos="${i}">${esc(c.position)}</button>`
+    ).join('');
+    targetPick = `<div class="convo-row"><span class="convo-rl">어느 자리에</span><div class="clarify-poss" id="clarifyPoss">${opts}</div></div>`;
+  }
+
+  host.innerHTML =
+    `<h3 class="block-label">한 장 더 물어보기</h3>
+     <p class="convo-sub">헷갈리는 자리에 보충 한 장을 얹어요. 타로는 같은 질문을 되묻지 않아요 — 오늘 이 리딩은 ${MAX_CLARIFY}장까지.</p>
+     <div class="convo-row"><span class="convo-rl">무엇을</span><div class="clarify-angles" id="clarifyAngles">${angleChips}</div></div>
+     ${targetPick}
+     <div class="convo-thread" id="convoThread"></div>
+     <div class="convo-foot">
+       <button type="button" id="clarifyDraw" class="btn-quiet">＋ 보충 한 장 뽑기</button>
+       <span class="convo-note" id="convoNote"></span>
+     </div>`;
+
+  const angleHost = $('clarifyAngles');
+  if (angleHost) angleHost.onclick = (e) => {
+    const b = e.target.closest('.clarify-angle'); if (!b) return;
+    angleHost.querySelectorAll('.clarify-angle').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    convoAngle = angles.filter(a => a.id === b.dataset.angle)[0] || angles[0];
+  };
+  const posHost = $('clarifyPoss');
+  if (posHost) posHost.onclick = (e) => {
+    const b = e.target.closest('.clarify-pos'); if (!b) return;
+    posHost.querySelectorAll('.clarify-pos').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    convoTargetIdx = parseInt(b.dataset.pos, 10);
+  };
+  const draw = $('clarifyDraw');
+  if (draw) draw.onclick = runClarify;
+}
+
+function runClarify(){
+  if (!lastSpread) return;
+  if (convoClarifiers.length >= MAX_CLARIFY){ return; }
+  const p = prefs();
+  const exclude = lastSpread.map(c => c.id).concat(convoClarifiers.map(c => c.id));
+  const clar = TarotCore.drawClarifier(exclude, { reversals:p.reversals, reversalRate:p.reversalRate });
+  if (!clar){ return; }
+
+  const target = (convoTargetIdx >= 0 && lastSpread[convoTargetIdx]) ? lastSpread[convoTargetIdx] : lastSpread[lastSpread.length-1];
+  const angle = convoAngle || TarotCore.clarifyAngles(lastFocus)[0];
+  const body = TarotCore.clarify(clar, target, lastFocus, angle);
+  const reader = lastReader || TarotCore.readerFor(currentReader());
+  const G = window.TarotGlyphs;
+
+  convoClarifiers.push(clar);
+
+  const thread = $('convoThread');
+  if (thread){
+    const bubble = document.createElement('div');
+    bubble.className = 'convo-bubble';
+    bubble.style.setProperty('--vaccent', reader.accent);
+    bubble.innerHTML =
+      `<div class="cb-ask">${esc(angle.label)}${target ? ' · ' + esc(target.position) : ''}</div>
+       <div class="cb-body">
+         <div class="cb-card${clar.reversed ? ' is-rev' : ''}">
+           <div class="cb-art">${G ? G.glyphFor(clar) : ''}</div>
+           <div class="cb-ko">${esc(clar.ko)}</div>
+           <span class="pill ${clar.reversed ? 'pill-rev' : 'pill-up'}">${esc(TarotCore.directionLabel(clar))}</span>
+         </div>
+         <p class="cb-text"><span class="cb-reader">${esc(reader.glyph)} ${esc(reader.name)}</span>${esc(reader.answerLead + body)}</p>
+       </div>`;
+    thread.appendChild(bubble);
+    requestAnimationFrame(() => bubble.classList.add('in'));
+  }
+
+  // 이 리딩 기록에 보충 카드를 덧붙여 남긴다 (기기 안, 되돌림 가능)
+  try {
+    const all = readJSON(READINGS_KEY, []);
+    if (all.length){
+      all[0].clarifiers = (all[0].clarifiers || []).concat([{
+        id:clar.id, ko:clar.ko, reversed:clar.reversed,
+        angle:angle.id, target: target ? target.position : ''
+      }]);
+      writeJSON(READINGS_KEY, all);
+    }
+  } catch(e){}
+
+  if (window.legionTrack) try { legionTrack('clarify', { angle:angle.id, n:convoClarifiers.length }); } catch(e){}
+
+  const draw = $('clarifyDraw'), note = $('convoNote');
+  if (convoClarifiers.length >= MAX_CLARIFY){
+    if (draw){ draw.disabled = true; draw.classList.add('is-done'); }
+    if (note) note.textContent = '오늘은 여기까지 — 타로는 같은 질문을 계속 되묻지 않아요.';
+  } else if (note){
+    note.textContent = `${convoClarifiers.length} / ${MAX_CLARIFY}`;
+  }
 }
 
 // share-at-peak: 뽑자마자 공유 의도 최고 — Contagious Emotion + Niobe peak share
@@ -253,6 +400,7 @@ function renderDaily(){
   const p = prefs();
   const [c] = TarotCore.drawSpread('one', { reversals:p.reversals, reversalRate:p.reversalRate, rnd });
   const G = window.TarotGlyphs;
+  const prompt = TarotCore.dailyPrompt(c);
   host.innerHTML =
     `<div class="daily-art">${G ? G.glyphFor(c) : ''}</div>
      <div class="daily-body">
@@ -260,9 +408,69 @@ function renderDaily(){
        <span class="pill ${c.reversed ? 'pill-rev' : 'pill-up'}">${esc(TarotCore.directionLabel(c))}</span>
        <p class="daily-mean">${esc(c.gist)}</p>
        <p class="daily-advice">${esc(c.advice)}</p>
+       <div class="daily-hook">
+         <p class="daily-prompt">“${esc(prompt)}”</p>
+         <div class="daily-reso" id="dailyReso"></div>
+       </div>
      </div>`;
   if (c.reversed) host.classList.add('is-rev'); else host.classList.remove('is-rev');
   host.dataset.card = c.id;
+  renderDailyResonance();
+}
+
+// 오늘 카드가 와닿았는지 하루 한 번 되짚는 고리(Co-Star식 resonance) — 결정적·기기 저장.
+function dailyResoKey(){ return 'tarot_daily_reso_' + todayKey(); }
+function renderDailyResonance(){
+  const el = $('dailyReso'); if (!el) return;
+  let v = null; try { v = localStorage.getItem(dailyResoKey()); } catch(e){}
+  if (v){
+    let cnt = 0; try { cnt = parseInt(localStorage.getItem('tarot_reso_yes') || '0', 10) || 0; } catch(e){}
+    const line = v === 'yes'
+      ? '이 결이 오늘과 맞닿았군요. 저녁에 한 번 더 떠올려 보세요.'
+      : '아직이라도 괜찮아요. 하루가 저물 때 다시 보면 달라질 수 있어요.';
+    el.innerHTML = `<p class="reso-done">${v === 'yes' ? '✦ 와닿음' : '· 아직'} — ${esc(line)}`
+      + (v === 'yes' && cnt > 1 ? ` <small>이 카드가 와닿은 날 ${cnt}일째</small>` : '') + `</p>`;
+    return;
+  }
+  el.innerHTML =
+    `<span class="reso-q">오늘 이 결, 지금 마음에 와닿나요?</span>
+     <button type="button" class="reso-btn" data-reso="yes">와닿아요</button>
+     <button type="button" class="reso-btn" data-reso="no">아직이요</button>`;
+  el.querySelectorAll('.reso-btn').forEach(b => b.addEventListener('click', () => {
+    const val = b.dataset.reso;
+    try {
+      localStorage.setItem(dailyResoKey(), val);
+      if (val === 'yes'){
+        const n = (parseInt(localStorage.getItem('tarot_reso_yes') || '0', 10) || 0) + 1;
+        localStorage.setItem('tarot_reso_yes', String(n));
+      }
+    } catch(e){}
+    if (window.legionTrack) try { legionTrack('daily_resonance', { v: val }); } catch(e){}
+    renderDailyResonance();
+  }));
+}
+
+// ── 리더 페르소나 선택 ──────────────────────────────────────────────────────
+function renderReaderPick(){
+  const host = $('readerPick'); if (!host || !window.TarotCore) return;
+  const sel = prefs().reader || 'luna';
+  const order = ['luna','sol','hyeon','do'];
+  host.innerHTML = order.map(k => {
+    const r = TarotCore.READERS[k]; if (!r) return '';
+    const on = k === sel;
+    return `<label class="reader-opt${on ? ' on' : ''}" style="--vaccent:${esc(r.accent)}">
+        <input type="radio" name="reader" value="${esc(k)}"${on ? ' checked' : ''}>
+        <span class="reader-glyph">${esc(r.glyph)}</span>
+        <span class="reader-name">${esc(r.name)}</span>
+        <span class="reader-tag">${esc(r.tag.split(' · ')[0])}</span>
+      </label>`;
+  }).join('');
+  host.querySelectorAll('input[name="reader"]').forEach(inp =>
+    inp.addEventListener('change', () => {
+      setPref('reader', inp.value);
+      host.querySelectorAll('.reader-opt').forEach(o => o.classList.remove('on'));
+      const lab = inp.closest('.reader-opt'); if (lab) lab.classList.add('on');
+    }));
 }
 
 // ── 연속 기록 ───────────────────────────────────────────────────────────────
@@ -885,6 +1093,7 @@ function init(){
     school.textContent = `${s.deck} 기준 · ${s.numbering} · 코트 ${s.court} · 켈틱 크로스 ${s.celtic}`;
   }
 
+  renderReaderPick();
   renderDaily();
   renderStreak();
   setInterval(function () { try { renderStreak(); } catch (e) {} }, 60000);

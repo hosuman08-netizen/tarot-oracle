@@ -320,3 +320,74 @@ footer{ max-width:640px; margin:calc(var(--g)*6) auto 0; text-align:center;
 .foot-nav a{ font-size:.74rem; color:var(--text-dim); text-decoration:none; transition:color .18s; }
 .foot-nav a:hover{ color:var(--gold); }
 footer small{ font-size:.66rem; color:var(--text-faint); line-height:1.7; display:block; }
+
+/* ── 리더 페르소나 선택 ──────────────────────────────── */
+.readers{ display:grid; grid-template-columns:repeat(2,1fr); gap:var(--g); }
+@media (min-width:520px){ .readers{ grid-template-columns:repeat(4,1fr); } }
+.reader-opt{ position:relative; display:flex; flex-direction:column; align-items:center;
+  gap:3px; padding:calc(var(--g)*1.25) var(--g); cursor:pointer;
+  border:1px solid var(--line); border-radius:var(--r); background:var(--bg-soft);
+  transition:border-color .18s, background .18s; text-align:center; }
+.reader-opt:hover{ border-color:var(--line-lit); }
+.reader-opt input{ position:absolute; opacity:0; width:0; height:0; }
+.reader-opt.on{ border-color:var(--vaccent); background:color-mix(in srgb, var(--vaccent) 9%, transparent); }
+.reader-glyph{ font-size:1.15rem; color:var(--vaccent); line-height:1; }
+.reader-name{ font-size:.82rem; font-weight:600; color:var(--text); }
+.reader-opt.on .reader-name{ color:var(--vaccent); }
+.reader-tag{ font-size:.62rem; color:var(--text-faint); }
+.reader-opt input:focus-visible ~ .reader-glyph{ outline:2px solid var(--vaccent); outline-offset:3px; border-radius:4px; }
+
+/* ── 리더 목소리(해석 서사 감싸기) ──────────────────── */
+.reading-voice{ border:1px solid var(--line); border-left:2px solid var(--vaccent);
+  border-radius:var(--r); background:var(--bg-soft); padding:calc(var(--g)*2); }
+.voice-head{ display:flex; align-items:baseline; gap:8px; margin-bottom:calc(var(--g)*1.25); }
+.voice-glyph{ font-size:1rem; color:var(--vaccent); }
+.voice-head b{ font-size:.86rem; color:var(--vaccent); }
+.voice-head small{ font-size:.66rem; color:var(--text-faint); }
+.voice-line{ font-size:.82rem; line-height:1.62; color:var(--text-dim); font-style:italic; margin:0; }
+.voice-open{ margin-bottom:calc(var(--g)*1.25); }
+.voice-close{ margin-top:calc(var(--g)*1.25); }
+.reading-voice .narrative{ border:0; border-left:0; padding:0; background:transparent; border-radius:0; }
+
+/* ── 후속 카드 · 대화 모드 ───────────────────────────── */
+.convo{ margin-top:calc(var(--g)*3); }
+.convo-sub{ font-size:.74rem; color:var(--text-faint); margin:0 0 calc(var(--g)*1.5); line-height:1.6; }
+.convo-row{ display:flex; align-items:flex-start; gap:var(--g); margin-bottom:var(--g); flex-wrap:wrap; }
+.convo-rl{ font-size:.7rem; color:var(--text-faint); min-width:56px; padding-top:6px; }
+.clarify-angles, .clarify-poss{ display:flex; flex-wrap:wrap; gap:6px; flex:1; }
+.clarify-angle, .clarify-pos{ font-size:.74rem; color:var(--text-dim); background:transparent;
+  border:1px solid var(--line); border-radius:999px; padding:5px 12px; transition:all .18s; cursor:pointer; }
+.clarify-angle:hover, .clarify-pos:hover{ border-color:var(--line-lit); }
+.clarify-angle.on{ border-color:var(--gold); color:var(--gold); background:rgba(197,164,110,.08); }
+.clarify-pos.on{ border-color:var(--gold-dim); color:var(--text); background:rgba(197,164,110,.06); }
+.convo-thread{ display:grid; gap:var(--g); margin:calc(var(--g)*1.5) 0; }
+.convo-bubble{ border:1px solid var(--line); border-left:2px solid var(--vaccent);
+  border-radius:var(--r); background:var(--bg-soft); padding:calc(var(--g)*1.5);
+  opacity:0; transform:translateY(8px); transition:opacity .32s ease-out, transform .32s ease-out; }
+.convo-bubble.in{ opacity:1; transform:translateY(0); }
+.cb-ask{ font-size:.66rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--vaccent); margin-bottom:calc(var(--g)*1.25); }
+.cb-body{ display:flex; gap:calc(var(--g)*1.5); align-items:flex-start; }
+.cb-card{ flex:0 0 62px; text-align:center; }
+.cb-card.is-rev .cb-art{ transform:rotate(180deg); }
+.cb-art{ color:var(--vaccent); }
+.cb-art .glyph{ width:52px; height:52px; display:block; margin:0 auto; }
+.cb-ko{ font-size:.74rem; color:var(--text); margin:4px 0 3px; }
+.cb-text{ font-size:.82rem; line-height:1.66; color:var(--text-dim); margin:0; min-width:0; }
+.cb-reader{ display:block; font-size:.68rem; color:var(--vaccent); margin-bottom:3px; font-weight:600; }
+.convo-foot{ display:flex; align-items:center; gap:calc(var(--g)*1.5); flex-wrap:wrap; }
+#clarifyDraw.is-done{ opacity:.5; }
+.convo-note{ font-size:.72rem; color:var(--text-faint); }
+
+/* ── 오늘의 카드 훅(성찰 프롬프트 + resonance) ───────── */
+.daily-hook{ margin-top:calc(var(--g)*1.5); padding-top:calc(var(--g)*1.5);
+  border-top:1px solid var(--line); }
+.daily-prompt{ margin:0 0 var(--g); font-size:.82rem; line-height:1.6; color:var(--text);
+  font-style:italic; }
+.daily-reso{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.reso-q{ font-size:.72rem; color:var(--text-faint); margin-right:2px; }
+.reso-btn{ font-size:.74rem; color:var(--text-dim); background:transparent;
+  border:1px solid var(--line); border-radius:999px; padding:4px 12px; transition:all .18s; cursor:pointer; }
+.reso-btn:hover{ border-color:var(--gold); color:var(--gold); }
+.reso-done{ margin:0; font-size:.76rem; color:var(--gold-dim); line-height:1.6; }
+.reso-done small{ color:var(--text-faint); }
