@@ -641,6 +641,7 @@ function renderHistory(){
   el.innerHTML =
     `<div class="row" style="margin-bottom:10px;gap:8px;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-quiet" id="exportReadings">⬇ 기록 백업</button>
+      <button type="button" class="btn-quiet" id="delLastReading">↩ 최근 1건 삭제</button>
       ${mAvg ? `<span class="hint">7일 기분 평균 ${mAvg}/5</span>` : ''}
     </div>` +
     all.slice(0, 20).map(r => {
@@ -656,6 +657,15 @@ function renderHistory(){
   }).join('');
   const xb = $('exportReadings');
   if (xb) xb.onclick = exportReadingsJSON;
+  const dl = $('delLastReading');
+  if (dl) dl.onclick = function () {
+    try {
+      const next = all.slice(1);
+      writeJSON(READINGS_KEY, next);
+      renderHistory(); renderMirror(); renderStreak();
+      if (window.legionTrack) legionTrack('undo', { what: 'reading' });
+    } catch (e) {}
+  };
 }
 
 // ── 거울 — 쌓인 기록을 되돌려준다 ───────────────────────────────────────────
