@@ -472,7 +472,31 @@ function drawAura(spread){
   ctx.putImageData(img, 0, 0);
 }
 
-const TAROT_SHARE_URL = 'https://hosuman08-netizen.github.io/tarot-oracle/?utm_source=share&utm_medium=app';
+const TAROT_SHARE_BASE = 'https://hosuman08-netizen.github.io/tarot-oracle/';
+function tarotKId() {
+  try {
+    var id = localStorage.getItem('tarot_k_id');
+    if (!id) { id = 't' + Math.random().toString(36).slice(2, 8); localStorage.setItem('tarot_k_id', id); }
+    return id;
+  } catch (e) { return 'share'; }
+}
+function getTarotShareUrl() {
+  return TAROT_SHARE_BASE + '?utm_source=share&utm_medium=app&ref=' + encodeURIComponent(tarotKId());
+}
+function captureTarotKRef() {
+  try {
+    var q = new URLSearchParams(location.search || '');
+    var ref = q.get('ref');
+    if (!ref || ref === 'share') return;
+    if (ref === tarotKId()) return;
+    if (!localStorage.getItem('tarot_k_from')) {
+      localStorage.setItem('tarot_k_from', ref);
+      var n = (parseInt(localStorage.getItem('tarot_k_inbound') || '0', 10) || 0) + 1;
+      localStorage.setItem('tarot_k_inbound', String(n));
+      if (window.legionTrack) try { legionTrack('k_link', { from: ref }); } catch (e) {}
+    }
+  } catch (e) {}
+}
 
 // ── 공유 ────────────────────────────────────────────────────────────────────
 function shareText(){
@@ -482,7 +506,7 @@ function shareText(){
   const spec = TarotCore.SPREADS[lastSpreadKey] || {};
   return `${spec.name || '타로 리딩'} — ${names}\n`
     + `${key.ko} ${TarotCore.directionLabel(key)}: ${TarotCore.focusMeaning(key, lastFocus)}\n\n`
-    + `무료 타로 리딩 → ${TAROT_SHARE_URL}`;
+    + `무료 타로 리딩 → ${getTarotShareUrl()}`;
 }
 
 // 공유 이미지 — 카드가 실제로 보이는 한 장. 외부 요청 없이 캔버스로 굽는다.
@@ -661,6 +685,7 @@ function crossSync(){
 
 // ── 초기화 ──────────────────────────────────────────────────────────────────
 function init(){
+  captureTarotKRef();
   const p = prefs();
   const rev = $('revToggle');
   if (rev){
