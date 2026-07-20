@@ -163,5 +163,4 @@
     return exportPack;
   };
 
-  console.log('%c[Lung Surprise Eye EVOLVED] p1 gacha + p5 spell + Ache-Breath + 창발 + 2 births. Glasses/Optimus stubs + distributed. Central zero. Legion one.', 'color:#c5a46e');
 })();

@@ -169,7 +169,7 @@ window.onload = () => {
   const f = document.querySelector('footer');
   if (f) f.innerHTML = '<small>픽션 AI 리딩 · 엔터테인먼트 전용 · 실제 운명/조언 아님 · 18+ · 되돌림 가능</small>';
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-  if (window.getP6LungSurprise) console.log('[p21] p6 lung + canvas ready');
+  if (window.getP6LungSurprise && false) { /* debug hook disabled */ }
 };
 
 // helpers injected
