@@ -209,10 +209,13 @@ function showTarotMoneyPipe(host){
     (host || document.body).appendChild(el);
   }
   el.innerHTML = '<div style="color:#e0b552;font-weight:700;margin-bottom:6px">💎 리딩 더 깊게</div>'
-    + '<p style="opacity:.8;font-size:12px;margin:0 0 8px">엔터테인먼트 · 운명 확정 아님</p>'
-    + '<a style="color:#ece8f1" href="mailto:hoyashi95@gmail.com?subject=%5B%ED%83%80%EB%A1%9C%5D%20%ED%9B%84%EC%9B%90">☕ 후원 문의</a>'
-    + ' · <button type="button" class="btn-quiet" onclick="shareReading && shareReading()">공유</button>';
-  try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: 'tarot' }); } catch(e){}
+    + '<p style="opacity:.8;font-size:12px;margin:0 0 8px">엔터테인먼트 · 운명 확정 아님 · 18+ 권장</p>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'
+    + '<a class="btn-primary" style="display:inline-block;padding:8px 12px;border-radius:10px;text-decoration:none;color:inherit;border:1px solid #c5a46e55" href="mailto:hoyashi95@gmail.com?subject=%5B%ED%83%80%EB%A1%9C%5D%20%ED%9B%84%EC%9B%90">☕ 후원 문의</a>'
+    + '<button type="button" class="btn-quiet" onclick="shareReading && shareReading()">📤 공유</button>'
+    + '<a class="btn-quiet" style="display:inline-block;padding:8px 12px;border-radius:10px;text-decoration:none;color:#e0b552;border:1px solid #c5a46e55" href="https://hosuman08-netizen.github.io/saju-miniapp/?utm_source=tarot&utm_medium=duo&ref=tarot_pipe">🔮 사주와 교차 읽기</a>'
+    + '</div>';
+  try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: 'tarot', duo: 'saju' }); } catch(e){}
 }
 // 하위 호환 — 예전 버튼이 부르던 이름
 function drawTarot(n){ drawReading(n === 3 ? 'ppf' : n === 10 ? 'celtic' : n === 1 ? 'one' : n); }
@@ -257,18 +260,45 @@ function renderDaily(){
 }
 
 // ── 연속 기록 ───────────────────────────────────────────────────────────────
-// 끊겼다고 압박하지 않는다. 그냥 기록으로만 보여준다.
+// 끊겼다고 압박하지 않는다. 1일 미스는 주 1회 보호막(Duolingo freeze)으로 살린다.
+function dayOffsetKey(n){
+  const d = new Date(); d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function applyTarotStreakShield(s){
+  if (!s || !s.last) return { s: s || { last:null, count:0, best:0 }, froze:false };
+  const t = todayKey();
+  if (s.last === t || s.last === dayOffsetKey(-1)) return { s, froze:false };
+  const missedOne = s.last === dayOffsetKey(-2);
+  const shieldReady = !s.shieldLast || ((new Date(t) - new Date(s.shieldLast)) / 86400000) >= 7;
+  if (missedOne && shieldReady && (s.count||0) >= 3){
+    s.shieldLast = t;
+    s.last = dayOffsetKey(-1);
+    try {
+      const tip = document.createElement('div');
+      tip.textContent = '🛡️ 연속 보호막 · ' + s.count + '일 유지';
+      tip.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16121c;color:#e0b552;padding:10px 16px;border-radius:12px;z-index:9999;font-size:13px;border:1px solid #c5a46e55';
+      document.body.appendChild(tip);
+      setTimeout(() => tip.remove(), 3000);
+    } catch(e){}
+    if (window.legionTrack) try { legionTrack('streak_freeze', { count:s.count }); } catch(e){}
+    return { s, froze:true };
+  }
+  return { s, froze:false };
+}
 function bumpStreak(){
-  const s = readJSON(STREAK_KEY, { last:null, count:0, best:0 });
+  let s = readJSON(STREAK_KEY, { last:null, count:0, best:0 });
   const t = todayKey();
   if (s.last === t) return;
-  const y = new Date(); y.setDate(y.getDate()-1);
-  const yk = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  const bridged = applyTarotStreakShield(s);
+  s = bridged.s;
+  const yk = dayOffsetKey(-1);
   s.count = (s.last === yk) ? (s.count||0)+1 : 1;
   s.best = Math.max(s.best||0, s.count);
   s.last = t;
   writeJSON(STREAK_KEY, s);
   renderStreak();
+  if (window.legionTrack) try { legionTrack('streak', { count:s.count, best:s.best, froze:!!bridged.froze }); } catch(e){}
 }
 function midnightLeftLabel(){
   const now = new Date();
@@ -286,8 +316,10 @@ function renderStreak(){
     el.textContent = '아직 기록이 없어요 — 첫 카드를 뽑아보세요 · 오늘 창 ' + clock;
     return;
   }
+  const shieldReady = !s.shieldLast || ((new Date(todayKey()) - new Date(s.shieldLast)) / 86400000) >= 7;
   el.textContent = `${s.count || 0}일 연속 · 지금까지 ${all.length}번의 리딩`
     + (s.best > (s.count||0) ? ` · 최장 ${s.best}일` : '')
+    + ((s.count||0) >= 3 && shieldReady ? ' · 🛡️보호 1회' : '')
     + ` · 일일카드 리셋 ${clock}`;
 }
 

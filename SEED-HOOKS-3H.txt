@@ -1,0 +1,2 @@
+# auto seed hooks — neo posts only
+1. 브라우저에서 바로. 설치 없이 30초.
