@@ -322,8 +322,18 @@ function renderStreak(){
     el.textContent = '아직 기록이 없어요 — 첫 카드를 뽑아보세요 · 오늘 창 ' + clock;
     return;
   }
+  // 5H: 7d velocity (draw count this week) for return loop
+  let weekN = 0;
+  try {
+    const cut = Date.now() - 7 * 86400000;
+    weekN = all.filter(function (r) {
+      const t = r && r.ts ? Date.parse(r.ts) : 0;
+      return t >= cut;
+    }).length;
+  } catch (e) { weekN = 0; }
   const shieldReady = !s.shieldLast || ((new Date(todayKey()) - new Date(s.shieldLast)) / 86400000) >= 7;
   el.textContent = `${s.count || 0}일 연속 · 지금까지 ${all.length}번의 리딩`
+    + (weekN ? ` · 7일 ${weekN}회` : '')
     + (s.best > (s.count||0) ? ` · 최장 ${s.best}일` : '')
     + ((s.count||0) >= 3 && shieldReady ? ' · 🛡️보호 1회' : '')
     + ` · 일일카드 리셋 ${clock}`;
