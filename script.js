@@ -1163,3 +1163,5 @@ window.__renderShareImage = renderShareImage; // 검증 하니스에서 공유 �
     }, 800);
   } catch(e) {}
 })();
+
+/* LEGION_WAVE_58_wave_stamp */ /* ship wave 58 2026-07-21T07:43:20 */
