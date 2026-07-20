@@ -87,6 +87,8 @@ function drawTarot(n) {
   recordToCodex('tarot', summary + ' — ' + narrative, spreadScore(spread), {reversed: spread.filter(c=>c.reversed).length});
   mutateSharedFateTarot(spreadScore(spread));
   if (Math.random() > 0.82) birthTarotSpore();
+  // 계측: 카드 드로우 완료 = 핵심 활성화
+  if (window.legionTrack) legionTrack('activate');
 }
 
 // 리딩의 '결' 지수 — 정방향/역방향 구성에서 파생(엔터테인먼트용, 코드=표시 일치)
@@ -250,6 +252,7 @@ function shareTarotResult() {
   if (!lastSpread && !codex.length) { alert('타로를 먼저 뽑아주세요.'); return; }
   const text = buildTarotShareText();
   _tarotCrossSync(codex[0]); // 내부 크로스 연동 (유저 비노출)
+  if (window.legionTrack) legionTrack('share'); // 계측: 결과 공유 클릭
 
   if (navigator.share) {
     navigator.share({ title: '오늘의 타로 리딩', text }).catch(()=>{});
@@ -270,6 +273,7 @@ function shareTarotToX() {
   const codex = JSON.parse(localStorage.getItem(CODEX_KEY) || '[]');
   if (!lastSpread && !codex.length) { alert('타로를 먼저 뽑아주세요.'); return; }
   _tarotCrossSync(codex[0]);
+  if (window.legionTrack) legionTrack('share'); // 계측: X 공유 클릭
   const text = buildTarotShareText();
   window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank', 'noopener');
 }
