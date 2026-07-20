@@ -178,21 +178,84 @@ function mutateSharedFateTarot(v){ let p=JSON.parse(localStorage.getItem('fateCo
 function birthTarotSpore(){ let a=JSON.parse(localStorage.getItem('legion_birth_artifacts')||'[]'); a.unshift({id:'ts'+Date.now(),from:'p21',power:5+Math.random()*12|0}); localStorage.setItem('legion_birth_artifacts',JSON.stringify(a.slice(0,9))); }
 function startTarotFomoTimer(){ setInterval(()=>{const e=document.getElementById('fomo'); if(e) e.textContent = e.textContent.includes('가능') ? '오늘의 카드 드로우 가능' : e.textContent;}, 40000); }
 
-// === NIOBE VIRAL UPGRADE: p21 "Fate Share" (symmetric to p20) ===
-// Codex relic export + surprise story share. Cross p9/p11. K + retention. Fictional shield.
-function fateShare(fromCodex=false) {
-  const CODEX_KEY = 'fateCodex';
-  let codex = JSON.parse(localStorage.getItem(CODEX_KEY) || '[]');
-  if (!codex.length) { alert('타로 드로우 먼저.'); return; }
-  const relic = fromCodex ? codex[0] : codex[0];
-  const story = `🌌 오늘의 타로 리딩 — ${relic.text}\nLv${relic.relicLv||1} · 기운 ${relic.power||relic.score} · x${(relic.multi||1).toFixed(1)}\n타로 + 사주 함께 읽기\n\n나의 리딩 이야기. 공유하고 당신의 이야기도 더해보세요.\n픽션 엔터테인먼트 전용 · 18+ · 실제 조언 아님.\n\n#타로 #사주\n👉 ${location.href}`;
-  navigator.clipboard.writeText(story).then(() => {
+// === 결과 공유 (유저용) ===
+// 매력적인 공유 문안 자동생성 → navigator.share 우선 → 실패시 클립보드 + 토스트.
+// 정직: 픽션 엔터테인먼트, 과장 없음. 내부 크로스 연동은 _tarotCrossSync가 조용히 처리.
+
+// 방금 뽑은 스프레드(있으면)에서 대표 카드 요약 + 호기심 훅을 만든다
+function buildTarotShareText() {
+  let headline, hook;
+  if (lastSpread && lastSpread.length) {
+    const key = lastSpread[0];
+    const dir = key.reversed ? '역방향' : '정방향';
+    const names = lastSpread.map(c => c.ko).join('·');
+    headline = `오늘 뽑은 타로는 ${key.ko}(${dir})${lastSpread.length>1?` 외 ${lastSpread.length-1}장 (${names})`:''}.`;
+    hook = key.reversed
+      ? '돌아보게 하는 카드가 나왔어. 너는 어떤 카드가 나올까?'
+      : '흐름이 좋게 읽히는 카드. 너의 오늘 카드도 궁금하다 👀';
+  } else {
+    // Codex 최근 기록으로 폴백
+    const codex = JSON.parse(localStorage.getItem(CODEX_KEY) || '[]');
+    const r = codex[0];
+    headline = r ? `오늘의 타로 리딩 — ${r.text}` : '오늘의 타로 리딩을 뽑아봤어.';
+    hook = '너도 오늘 카드 한 장 뽑아봐 👀';
+  }
+  return `🔮 ${headline}\n${hook}\n\n무료 타로 리딩 → ${location.href}\n#타로 #오늘의타로 #타로카드`;
+}
+
+// 가벼운 토스트 (복사됨 등)
+function showTarotToast(msg) {
+  let t = document.getElementById('tarot-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'tarot-toast';
+    t.style.cssText = 'position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#221a35;color:#f5f1e6;padding:9px 16px;border:1px solid #a38cd1;border-radius:8px;font-size:0.82rem;z-index:9999;opacity:0;transition:opacity .18s;box-shadow:0 4px 16px rgba(0,0,0,.4)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  requestAnimationFrame(()=>{ t.style.opacity='1'; });
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>{ t.style.opacity='0'; }, 2200);
+}
+
+// 결과 공유하기 — 메인 버튼
+function shareTarotResult() {
+  const codex = JSON.parse(localStorage.getItem(CODEX_KEY) || '[]');
+  if (!lastSpread && !codex.length) { alert('타로를 먼저 뽑아주세요.'); return; }
+  const text = buildTarotShareText();
+  _tarotCrossSync(codex[0]); // 내부 크로스 연동 (유저 비노출)
+
+  if (navigator.share) {
+    navigator.share({ title: '오늘의 타로 리딩', text }).catch(()=>{});
+    return;
+  }
+  // navigator.share 미지원 → 클립보드 복사 + 토스트
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(()=> showTarotToast('📋 공유 문구가 복사됐어요 · 붙여넣어 공유하세요'))
+      .catch(()=> prompt('아래 문구를 복사해서 공유하세요:', text));
+  } else {
+    prompt('아래 문구를 복사해서 공유하세요:', text);
+  }
+}
+
+// X(트위터)로 공유 — 옵션 버튼
+function shareTarotToX() {
+  const codex = JSON.parse(localStorage.getItem(CODEX_KEY) || '[]');
+  if (!lastSpread && !codex.length) { alert('타로를 먼저 뽑아주세요.'); return; }
+  _tarotCrossSync(codex[0]);
+  const text = buildTarotShareText();
+  window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank', 'noopener');
+}
+
+// 내부 크로스 연동 (코드네임/함수는 유저에게 노출하지 않음). 되돌림 가능·클라 로컬 전용.
+function _tarotCrossSync(relic) {
+  if (!relic) return;
+  try {
     const bonus = 7 + Math.floor((relic.power||60)/11);
-    let bal = parseFloat(localStorage.getItem('p10_balance')||'1284') + bonus; localStorage.setItem('p10_balance', bal.toFixed(2));
-    try {
-      localStorage.setItem('p21_fate_to_p9', JSON.stringify({score:relic.score||60, ts:Date.now()}));
-      localStorage.setItem('p21_fate_to_p11', JSON.stringify({relicPower:relic.power, aura:'tarot', ts:Date.now()}));
-    } catch(e){}
-    alert(`✅ 리딩 이야기를 복사했어요. 붙여넣어 공유하세요.\n픽션 엔터테인먼트 전용.`);
-  }).catch(()=>prompt('Copy:', story));
+    const bal = parseFloat(localStorage.getItem('p10_balance')||'1284') + bonus;
+    localStorage.setItem('p10_balance', bal.toFixed(2));
+    localStorage.setItem('p21_fate_to_p9', JSON.stringify({score:relic.score||60, ts:Date.now()}));
+    localStorage.setItem('p21_fate_to_p11', JSON.stringify({relicPower:relic.power, aura:'tarot', ts:Date.now()}));
+  } catch(e){}
 }
