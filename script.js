@@ -443,6 +443,8 @@ function drawAura(spread){
   ctx.putImageData(img, 0, 0);
 }
 
+const TAROT_SHARE_URL = 'https://hosuman08-netizen.github.io/tarot-oracle/';
+
 // ── 공유 ────────────────────────────────────────────────────────────────────
 function shareText(){
   if (!lastSpread || !lastSpread.length) return '오늘의 타로 리딩을 뽑아봤어요.';
@@ -451,7 +453,7 @@ function shareText(){
   const spec = TarotCore.SPREADS[lastSpreadKey] || {};
   return `${spec.name || '타로 리딩'} — ${names}\n`
     + `${key.ko} ${TarotCore.directionLabel(key)}: ${TarotCore.focusMeaning(key, lastFocus)}\n\n`
-    + `무료 타로 리딩 → ${location.href}`;
+    + `무료 타로 리딩 → ${TAROT_SHARE_URL}`;
 }
 
 // 공유 이미지 — 카드가 실제로 보이는 한 장. 외부 요청 없이 캔버스로 굽는다.
