@@ -472,7 +472,7 @@ function drawAura(spread){
   ctx.putImageData(img, 0, 0);
 }
 
-const TAROT_SHARE_URL = 'https://hosuman08-netizen.github.io/tarot-oracle/';
+const TAROT_SHARE_URL = 'https://hosuman08-netizen.github.io/tarot-oracle/?utm_source=share&utm_medium=app';
 
 // ── 공유 ────────────────────────────────────────────────────────────────────
 function shareText(){
