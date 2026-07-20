@@ -417,11 +417,21 @@ function renderDaily(){
        <div class="daily-hook">
          <p class="daily-prompt">“${esc(prompt)}”</p>
          <div class="daily-reso" id="dailyReso"></div>
+         <button type="button" class="btn-quiet" id="shareDailyCard" style="margin-top:8px">📤 오늘 카드 공유</button>
        </div>
      </div>`;
   if (c.reversed) host.classList.add('is-rev'); else host.classList.remove('is-rev');
   host.dataset.card = c.id;
   renderDailyResonance();
+  const sdb = $('shareDailyCard');
+  if (sdb) sdb.onclick = function () {
+    try {
+      const text = '오늘의 타로 · ' + c.ko + ' ' + TarotCore.directionLabel(c) + '\n“' + prompt + '”\n' + getTarotShareUrl();
+      if (navigator.share) navigator.share({ text: text, url: getTarotShareUrl() }).catch(function () {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(text);
+      if (window.legionTrack) legionTrack('share_peak', { what: 'daily' });
+    } catch (e) {}
+  };
 }
 
 // 오늘 카드가 와닿았는지 하루 한 번 되짚는 고리(Co-Star식 resonance) — 결정적·기기 저장.
