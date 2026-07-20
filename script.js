@@ -1,3 +1,4 @@
+// ggDailyDraw
 // p21 Tarot — UI 레이어. 리딩 규칙은 전부 tarot-core.js(TarotCore)에 있다.
 // 이 파일은 화면 구성 · 기록 · 거울(패턴 집계) · 공유 이미지 · 크로스 연동만 담당.
 'use strict';
