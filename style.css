@@ -9,6 +9,17 @@ h1 { font-size:2.05rem; margin:0; color:var(--gold); letter-spacing:-0.5px; } /*
 .card { background:#12100d; padding:calc(var(--grid)*1.25); border-radius:9px; border:1px solid #3a2f22; flex:1; min-width:96px; text-align:center; }
 #cards .card { display:flex; flex-direction:column; gap:3px; transition:border-color .2s, transform .2s; }
 #cards .card:hover { border-color:var(--gold); transform:translateY(-2px); }
+/* 카드 뒤집기 등장 — 뒷면에서 앞면으로 넘어가는 리딩의 의식(儀式) 연출 */
+#cards .card.flip-in { animation:cardFlip .52s cubic-bezier(.2,.7,.2,1) both; transform-origin:center; }
+@keyframes cardFlip {
+  0%   { opacity:0; transform:perspective(600px) rotateY(-92deg) translateY(6px); }
+  55%  { opacity:1; }
+  100% { opacity:1; transform:perspective(600px) rotateY(0) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #cards .card.flip-in { animation:cardFade .3s ease both; }
+  @keyframes cardFade { from{opacity:0} to{opacity:1} }
+}
 .card-pos { font-size:0.6rem; letter-spacing:1px; color:var(--dim); text-transform:uppercase; }
 .card-name { color:var(--gold); font-weight:600; font-size:0.92rem; }
 .card-mean { font-size:0.72rem; color:#c9bda6; opacity:0.85; }

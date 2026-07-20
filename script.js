@@ -7,10 +7,19 @@ const LilithTarot = {
   update() { this.resonance = 0.32 + Math.random()*0.61; return this.resonance; }
 };
 
+// 오늘 뽑은 횟수를 정직하게 표시(제한 없음 — 가짜 '1회' 아님). 날짜 바뀌면 리셋.
+function todayKey() { return new Date().toISOString().slice(0,10); }
 function updateFomo() {
   const el=document.getElementById('fomo');
   if (!el) return;
-  el.textContent = '오늘 드로우 가능 · 셔플 후 카드를 뽑으세요';
+  const rec = JSON.parse(localStorage.getItem('tarotDrawDay')||'{}');
+  const n = (rec.day === todayKey()) ? (rec.count||0) : 0;
+  el.textContent = n > 0 ? `오늘 ${n}번째 리딩 · 다시 뽑기 가능` : '카드를 뽑아 오늘의 결을 읽어보세요';
+}
+function bumpDrawCount() {
+  const rec = JSON.parse(localStorage.getItem('tarotDrawDay')||'{}');
+  const count = (rec.day === todayKey()) ? (rec.count||0)+1 : 1;
+  localStorage.setItem('tarotDrawDay', JSON.stringify({day:todayKey(), count}));
 }
 
 // 실제 타로 코어(tarot-core.js)로 드로우 — 중복없는 셔플 + 정/역방향 + 포지션 해석
@@ -48,6 +57,14 @@ function drawTarot(n) {
       + `</div>`;
   }).join('');
 
+  // 카드가 하나씩 순서대로 뒤집히는 등장 연출 (리딩의 의식감). 10장 스프레드도 부드럽게.
+  const cardEls = document.getElementById('cards').querySelectorAll('.card');
+  const step = spread.length > 6 ? 55 : 90;
+  cardEls.forEach((el, i) => {
+    el.style.animationDelay = (i * step) + 'ms';
+    el.classList.add('flip-in');
+  });
+
   // 실제 종합 해석 서사 (카드×포지션×방향×초점을 엮음)
   const narrative = TarotCore.synthesize(spread, focus);
   // 개별 카드 조언 목록 (초점 반영)
@@ -61,6 +78,8 @@ function drawTarot(n) {
     + boostLine;
 
   document.getElementById('spread').style.display='block';
+  bumpDrawCount();
+  updateFomo();
   drawTarotCanvas(spread, spreadScore(spread));
 
   // Codex 기록엔 실제 리딩 요약 저장
@@ -147,7 +166,6 @@ function triggerTarotBanner() {
 window.onload = () => {
   updateFomo();
   showCodex();
-  startTarotFomoTimer();
   const f = document.querySelector('footer');
   if (f) f.innerHTML = '<small>픽션 AI 리딩 · 엔터테인먼트 전용 · 실제 운명/조언 아님 · 18+ · 되돌림 가능</small>';
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
@@ -185,7 +203,6 @@ function drawTarotCanvas(cards, score) {
 }
 function mutateSharedFateTarot(v){ let p=JSON.parse(localStorage.getItem('fateCodex')||'[]'); if(p[0]){p[0].score=Math.min(99,(p[0].score||60)+Math.floor(v*0.03)); localStorage.setItem('fateCodex',JSON.stringify(p));} }
 function birthTarotSpore(){ let a=JSON.parse(localStorage.getItem('legion_birth_artifacts')||'[]'); a.unshift({id:'ts'+Date.now(),from:'p21',power:5+Math.random()*12|0}); localStorage.setItem('legion_birth_artifacts',JSON.stringify(a.slice(0,9))); }
-function startTarotFomoTimer(){ setInterval(()=>{const e=document.getElementById('fomo'); if(e) e.textContent = e.textContent.includes('가능') ? '오늘의 카드 드로우 가능' : e.textContent;}, 40000); }
 
 // === 결과 공유 (유저용) ===
 // 매력적인 공유 문안 자동생성 → navigator.share 우선 → 실패시 클립보드 + 토스트.
