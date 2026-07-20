@@ -1,3 +1,6 @@
+
+/* LEGION_WAVE_13_session_counter */
+try{if(!sessionStorage.getItem('lw_p21_tarot_ap_session_counter')){sessionStorage.setItem('lw_p21_tarot_ap_session_counter','1');localStorage.setItem('lw_p21_tarot_ap_session_counter',String((+(localStorage.getItem('lw_p21_tarot_ap_session_counter')||0))+1));}}catch(e){}
 try{var __tt=JSON.parse(localStorage.getItem('tarot_today')||'{}');if(__tt.d!==new Date().toDateString()){__tt={d:new Date().toDateString(),n:0};}window.__tarotToday=function(){return __tt.n||0};window.__tarotBump=function(){__tt.n=(__tt.n||0)+1;localStorage.setItem('tarot_today',JSON.stringify(__tt));};}catch(e){window.__tarotBump=function(){};window.__tarotToday=function(){return 0};}
 // gg drawCount
 var __tarotDraws=+(localStorage.getItem("tarotDraws")||0);
