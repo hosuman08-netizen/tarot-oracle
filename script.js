@@ -717,3 +717,16 @@ window.shareTarotToX = shareToX;
 window.voiceTarot = speakReading;
 window.showCodex = renderHistory;
 window.__renderShareImage = renderShareImage; // 검증 하니스에서 공유 이미지 생성을 직접 호출
+
+// 3H Co-Star tarot daily focus
+(function dailyFocusTarot(){
+  try {
+    var k = 'tarot_daily_focus_' + new Date().toISOString().slice(0,10);
+    if (localStorage.getItem(k)) return;
+    localStorage.setItem(k, '1');
+    setTimeout(function(){
+      if (typeof toast === 'function') toast('☀️ 오늘 카드 한 장 — 30초');
+      if (window.legionTrack) legionTrack('daily_focus', {});
+    }, 800);
+  } catch(e) {}
+})();
