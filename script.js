@@ -332,11 +332,36 @@ function renderStreak(){
     }).length;
   } catch (e) { weekN = 0; }
   const shieldReady = !s.shieldLast || ((new Date(todayKey()) - new Date(s.shieldLast)) / 86400000) >= 7;
-  el.textContent = `${s.count || 0}일 연속 · 지금까지 ${all.length}번의 리딩`
-    + (weekN ? ` · 7일 ${weekN}회` : '')
+  let p10 = '';
+  try {
+    if (window.p10Bal) p10 = ' · 💳' + p10Bal();
+    // daily free p10 once
+    var fk = 'tarot_p10_free_' + todayKey();
+    if (!localStorage.getItem(fk) && window.p10Grant) {
+      /* grant deferred to chip click — just surface balance */
+    }
+  } catch (e) {}
+  const weekGoal = 7;
+  const weekBar = weekN >= weekGoal ? '✓' : (weekN + '/' + weekGoal);
+  el.innerHTML = `${s.count || 0}일 연속 · 지금까지 ${all.length}번의 리딩`
+    + (weekN ? ` · 7일 ${weekN}회 (${weekBar})` : '')
     + (s.best > (s.count||0) ? ` · 최장 ${s.best}일` : '')
     + ((s.count||0) >= 3 && shieldReady ? ' · 🛡️보호 1회' : '')
-    + ` · 일일카드 리셋 ${clock}`;
+    + p10
+    + ` · 일일카드 리셋 ${clock}`
+    + ' <button type="button" id="p10FreeBtn" class="btn-quiet" style="margin-left:6px;padding:2px 8px;font-size:11px">일일 가상+5</button>';
+  const pb = $('p10FreeBtn');
+  if (pb) pb.onclick = function () {
+    try {
+      var fk2 = 'tarot_p10_free_' + todayKey();
+      if (localStorage.getItem(fk2)) { pb.textContent = '오늘 받음'; return; }
+      if (window.p10Grant) p10Grant(5);
+      localStorage.setItem(fk2, '1');
+      pb.textContent = '✓ +5';
+      if (window.legionTrack) legionTrack('p10_daily_free', { n: 5 });
+      renderStreak();
+    } catch (e) {}
+  };
 }
 
 // ── 리딩 기록 ───────────────────────────────────────────────────────────────
