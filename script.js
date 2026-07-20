@@ -196,6 +196,23 @@ function offerSharePeak(spread, key){
   const b = $('sharePeakBtn'); if (b) b.onclick = () => { if (window.legionTrack) try{legionTrack('share_peak');}catch(e){} shareReading(); };
   const l = $('sharePeakLater'); if (l) l.onclick = () => { peak.hidden = true; };
   if (window.legionTrack) try { legionTrack('share_peak_shown', { key, major }); } catch(e){}
+  try { showTarotMoneyPipe(host); } catch (e) {}
+}
+
+/** 3H money-pipe · 엔터 트랙 (투자 아님) */
+function showTarotMoneyPipe(host){
+  let el = $('moneyPipe');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'moneyPipe';
+    el.style.cssText = 'margin:12px 0;padding:12px;border:1px solid #c5a46e55;border-radius:12px;background:#16121c;text-align:center;font-size:13px';
+    (host || document.body).appendChild(el);
+  }
+  el.innerHTML = '<div style="color:#e0b552;font-weight:700;margin-bottom:6px">💎 리딩 더 깊게</div>'
+    + '<p style="opacity:.8;font-size:12px;margin:0 0 8px">엔터테인먼트 · 운명 확정 아님</p>'
+    + '<a style="color:#ece8f1" href="mailto:hoyashi95@gmail.com?subject=%5B%ED%83%80%EB%A1%9C%5D%20%ED%9B%84%EC%9B%90">☕ 후원 문의</a>'
+    + ' · <button type="button" class="btn-quiet" onclick="shareReading && shareReading()">공유</button>';
+  try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: 'tarot' }); } catch(e){}
 }
 // 하위 호환 — 예전 버튼이 부르던 이름
 function drawTarot(n){ drawReading(n === 3 ? 'ppf' : n === 10 ? 'celtic' : n === 1 ? 'one' : n); }
