@@ -1026,8 +1026,29 @@ function crossSync(){
 }
 
 // ── 초기화 ──────────────────────────────────────────────────────────────────
+function restoreLastPrefs(){
+  try {
+    const savedQ = localStorage.getItem('tarot_last_q') || '';
+    const savedF = localStorage.getItem('tarot_last_focus') || '';
+    const qEl = $('question');
+    if (qEl && savedQ && !qEl.value) qEl.value = savedQ.slice(0, 120);
+    if (savedF) {
+      const radio = document.querySelector('input[name="focus"][value="' + savedF + '"]');
+      if (radio) radio.checked = true;
+    }
+  } catch (e) {}
+}
+function persistLastPrefs(){
+  try {
+    const q = ($('question') && $('question').value || '').trim().slice(0, 120);
+    if (q) localStorage.setItem('tarot_last_q', q);
+    const f = currentFocus();
+    if (f) localStorage.setItem('tarot_last_focus', f);
+  } catch (e) {}
+}
 function init(){
   captureTarotKRef();
+  restoreLastPrefs();
   const p = prefs();
   const rev = $('revToggle');
   if (rev){
@@ -1036,7 +1057,7 @@ function init(){
   }
 
   document.querySelectorAll('[data-spread]').forEach(btn =>
-    btn.addEventListener('click', () => drawReading(btn.dataset.spread)));
+    btn.addEventListener('click', () => { persistLastPrefs(); drawReading(btn.dataset.spread); }));
 
   const cardsHost = $('cards');
   if (cardsHost){
