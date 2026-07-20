@@ -347,10 +347,12 @@ function offerSharePeak(spread, key){
   peak.innerHTML = `<p>✨ ${line}</p>
     <div class="share-peak-row">
       <button type="button" class="btn-primary" id="sharePeakBtn">결과 이미지 공유</button>
+      <button type="button" class="btn-quiet" id="redrawSame">같은 스프레드 다시</button>
       <button type="button" class="btn-quiet" id="sharePeakLater">나중에</button>
     </div>`;
   peak.hidden = false;
   const b = $('sharePeakBtn'); if (b) b.onclick = () => { if (window.legionTrack) try{legionTrack('share_peak');}catch(e){} shareReading(); };
+  const rd = $('redrawSame'); if (rd) rd.onclick = () => { try { if (window.legionTrack) legionTrack('redraw', { key: lastSpreadKey }); } catch(e){} drawReading(lastSpreadKey || 'one'); };
   const l = $('sharePeakLater'); if (l) l.onclick = () => { peak.hidden = true; };
   if (window.legionTrack) try { legionTrack('share_peak_shown', { key, major }); } catch(e){}
   try { showTarotMoneyPipe(host); } catch (e) {}
