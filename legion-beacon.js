@@ -22,7 +22,8 @@
     window.legionTrack = function(type, extra){
       try{
         // ✅ ts 필수(워커 !ts 거부 방지) + 허용 이벤트명 사용
-        var body = JSON.stringify(Object.assign({ app:APP, type:(type||'app_open').slice(0,32), anonId:anon, ts:Date.now(), channel:channel() }, extra||{}));
+        // 2026-07-29 C3: multi worker reads b.anon (anonId-only → DAU collapse as "anon")
+        var body = JSON.stringify(Object.assign({ app:APP, type:(type||'app_open').slice(0,32), anon:anon, anonId:anon, ts:Date.now(), channel:channel() }, extra||{}));
         if(navigator.sendBeacon){ navigator.sendBeacon(URL+'/ev', body); }
         else{ fetch(URL+'/ev',{method:'POST',headers:{'content-type':'application/json'},body:body,keepalive:true}).catch(function(){}); }
       }catch(e){}

@@ -32,7 +32,7 @@ let convoTargetIdx = -1;    // 보충이 겨눈 자리(-1 = 전체/마지막)
 
 // ── 저장 유틸 (localStorage가 막혀 있어도 앱이 죽지 않게) ────────────────────
 function readJSON(key, fallback){
-  try{var _tp=+(localStorage.getItem('tarot_pulls')||0)+1;localStorage.setItem('tarot_pulls',_tp);}catch(e){}
+  // 읽기 전용 — pull 카운트 여기서 올리면 prefs/streak/history 조회마다 오염 (QA 2026-07-29)
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
   catch(e){ return fallback; }
 }
@@ -137,8 +137,6 @@ function currentFocus(){
 }
 
 function drawReading(spreadKey){
-  try{__tarotDraws++;localStorage.setItem("tarotDraws",__tarotDraws);}catch(e){}
-
   if (!window.TarotCore){ toast('타로 엔진을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.'); return; }
   const p = prefs();
   const spec = TarotCore.SPREADS[spreadKey] || TarotCore.SPREADS.one;
@@ -150,9 +148,15 @@ function drawReading(spreadKey){
 
   const spread = TarotCore.drawSpread(key, { reversals:p.reversals, reversalRate:p.reversalRate });
   lastSpread = spread;
+  // 실제 드로우 성공 후에만 카운트 (readJSON 오염·엔진 미로드 조기 return 방지)
+  try{__tarotDraws++;localStorage.setItem("tarotDraws",__tarotDraws);}catch(e){}
+  try{var _tp=+(localStorage.getItem('tarot_pulls')||0)+1;localStorage.setItem('tarot_pulls',_tp);}catch(e){}
+  try{if(typeof window.__tarotBump==='function')window.__tarotBump();}catch(e){}
 
-  $('spreadTitle').textContent = spec.name;
-  $('spreadMeta').textContent =
+  const spreadTitle = $('spreadTitle');
+  if (spreadTitle) spreadTitle.textContent = spec.name;
+  const spreadMeta = $('spreadMeta');
+  if (spreadMeta) spreadMeta.textContent =
     `${TarotCore.FOCUS_LABEL[lastFocus]} · ${p.reversals ? '역방향 사용' : '역방향 미사용'}`
     + (lastQuestion ? ` · “${lastQuestion}”` : '');
 
@@ -176,7 +180,9 @@ function drawReading(spreadKey){
     `<li data-idx="${i}"><b>${esc(c.position)}</b> — <span class="li-card">${esc(c.ko)} ${esc(TarotCore.directionLabel(c))}</span><br>${esc(TarotCore.interpretCard(c, lastFocus))}</li>`
   ).join('');
 
-  $('interp').innerHTML = extra
+  const interpHost = $('interp');
+  if (!interpHost) return;
+  interpHost.innerHTML = extra
     + `<div class="reading-voice" style="--vaccent:${esc(reader.accent)}">
          <div class="voice-head">
            <span class="voice-glyph">${esc(reader.glyph)}</span>
@@ -190,8 +196,11 @@ function drawReading(spreadKey){
     + `<ul class="reading-list">${perCard}</ul>`
     + sajuLineHTML(spread);
 
-  $('spread').hidden = false;
-  $('spread').scrollIntoView({ behavior:'smooth', block:'start' });
+  const spreadHost = $('spread');
+  if (spreadHost) {
+    spreadHost.hidden = false;
+    try { if (typeof spreadHost.scrollIntoView === 'function') spreadHost.scrollIntoView({ behavior:'smooth', block:'start' }); } catch (e) {}
+  }
 
   drawAura(spread);
   resetJournalForm();
@@ -374,7 +383,7 @@ function showTarotMoneyPipe(host){
     + '<button type="button" class="btn-quiet" onclick="shareReading && shareReading()">📤 공유</button>'
     + '<a class="btn-quiet" style="display:inline-block;padding:8px 12px;border-radius:10px;text-decoration:none;color:#e0b552;border:1px solid #c5a46e55" href="https://hosuman08-netizen.github.io/saju-miniapp/?utm_source=tarot&utm_medium=duo&ref=tarot_pipe">🔮 사주와 교차 읽기</a>'
     + '</div>';
-  try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: 'tarot', duo: 'saju' }); } catch(e){}
+  try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: (window.LEGION_APP || 'tarot-oracle'), duo: 'saju' }); } catch(e){}
 }
 // 하위 호환 — 예전 버튼이 부르던 이름
 function drawTarot(n){ drawReading(n === 3 ? 'ppf' : n === 10 ? 'celtic' : n === 1 ? 'one' : n); }
@@ -607,16 +616,74 @@ function saveReading(spread, key, narrative){
   });
   writeJSON(READINGS_KEY, all.slice(0, MAX_READINGS));
 
-  // 다른 앱과 공유하는 기존 기록 키도 계속 채워 호환을 유지한다
-  const codex = readJSON(CODEX_KEY, []);
+  // DNA Codex + birth (shared fateCodex + legion_birth_artifacts)
   const summary = spread.map(c => c.ko + (c.reversed ? '(역)' : '')).join('·');
-  codex.unshift({
-    ts:new Date().toISOString(), type:'tarot',
-    text:(summary + ' — ' + narrative).slice(0, 108),
-    score: spreadScore(spread), relicLv:1, power:spreadScore(spread), multi:1
-  });
-  writeJSON(CODEX_KEY, codex.slice(0, 18));
+  const sc = spreadScore(spread);
+  recordToCodex('tarot', summary + ' — ' + narrative, sc, { relicLevel: 1, power: sc, multi: 1 });
+  birthArtifact({ silent: true, type: 'tarot-spore', power: Math.floor(sc * 0.12) });
 }
+
+/** DNA Codex — persist localStorage fateCodex (p20/p21 Duo shared key) */
+function recordToCodex(type, text, score, extra) {
+  extra = extra || {};
+  const codex = readJSON(CODEX_KEY, []);
+  const entry = {
+    ts: new Date().toISOString(),
+    type: type || 'tarot',
+    text: String(text || '').slice(0, 108),
+    score: Math.min(99, score || 60),
+    relicLevel: extra.relicLevel || extra.relicLv || 1,
+    power: extra.power != null ? extra.power : (score || 60),
+    multi: extra.multi || 1,
+    from: 'p21'
+  };
+  codex.unshift(entry);
+  writeJSON(CODEX_KEY, codex.slice(0, 18));
+  return entry;
+}
+
+/** DNA reObserve — bump relic power/Lv, birth spore, persist */
+function reObserveCodex(idx) {
+  const codex = readJSON(CODEX_KEY, []);
+  if (!codex[idx]) return null;
+  const r = codex[idx];
+  r.power = Math.min(99, (r.power || r.score || 60) + 5);
+  r.relicLevel = (r.relicLevel || r.relicLv || 1) + 1;
+  codex[idx] = r;
+  writeJSON(CODEX_KEY, codex);
+  birthArtifact({ silent: true, type: 'reobserve-spore', power: r.power });
+  try {
+    const lung = JSON.parse(localStorage.getItem('p6_lungFragment') || '{"breath":0}');
+    lung.breath = ((lung.breath || 0) + 0.11) % 6.28;
+    lung.lastSurprise = (lung.lastSurprise || 0) * 0.6 + 0.3;
+    localStorage.setItem('p6_lungFragment', JSON.stringify(lung));
+  } catch (e) {}
+  if (window.legionTrack) try { legionTrack('reobserve', { idx: idx }); } catch (e) {}
+  if (typeof toast === 'function') toast('기록 강화 · Lv' + r.relicLevel + ' (가상)');
+  return r;
+}
+
+/** DNA birth — spore into shared legion_birth_artifacts (fictional only) */
+function birthArtifact(opts) {
+  opts = opts || {};
+  const spore = {
+    id: 'tb' + Date.now(),
+    from: opts.from || 'p21',
+    type: opts.type || 'tarot-spore',
+    power: opts.power != null ? opts.power : (7 + (Math.random() * 9 | 0)),
+    ts: Date.now()
+  };
+  let arts = [];
+  try { arts = JSON.parse(localStorage.getItem('legion_birth_artifacts') || '[]'); } catch (e) { arts = []; }
+  arts.unshift(spore);
+  localStorage.setItem('legion_birth_artifacts', JSON.stringify(arts.slice(0, 24)));
+  if (window.legionTrack) try { legionTrack('birth', { from: spore.from, type: spore.type }); } catch (e) {}
+  if (!opts.silent && typeof toast === 'function') toast('타로 씨앗이 생성됐어요 (가상)');
+  return spore;
+}
+window.recordToCodex = recordToCodex;
+window.reObserveCodex = reObserveCodex;
+window.birthArtifact = birthArtifact;
 
 // 정방향 비율에서 나오는 표시용 지수(엔터테인먼트). 코드와 화면 표기가 일치한다.
 function spreadScore(spread){
@@ -706,10 +773,12 @@ function renderHistory(){
     </div>
     <div style="height:6px;background:#1c1826;border-radius:4px;margin:0 0 12px;overflow:hidden"><i style="display:block;height:100%;width:${gPct}%;background:linear-gradient(90deg,#c4b5fd,#e0b552)"></i></div>` +
     all.slice(0, 20).map(r => {
-    const names = r.cards.map(c => esc(c.ko) + (c.reversed ? '<i>역</i>' : '')).join(' · ');
+    if (!r || !Array.isArray(r.cards)) return '';
+    const names = r.cards.map(c => esc((c && c.ko) || '?') + (c && c.reversed ? '<i>역</i>' : '')).join(' · ');
     const mood = r.mood ? `<span class="mood-dot" title="그때의 느낌 ${r.mood}/5">${'●'.repeat(r.mood)}${'○'.repeat(5-r.mood)}</span>` : '';
-    return `<article class="hist" data-id="${esc(r.id)}">
-      <header><b>${esc(r.spreadName)}</b><time>${esc(r.ts.slice(0,10))}</time></header>
+    const ts = (r.ts && String(r.ts).slice(0, 10)) || '';
+    return `<article class="hist" data-id="${esc(r.id || '')}">
+      <header><b>${esc(r.spreadName || '리딩')}</b><time>${esc(ts)}</time></header>
       ${r.question ? `<p class="hist-q">“${esc(r.question)}”</p>` : ''}
       <p class="hist-cards">${names}</p>
       ${r.note ? `<p class="hist-note">${esc(r.note)}</p>` : ''}
@@ -729,6 +798,15 @@ function renderHistory(){
       if (window.legionTrack) legionTrack('undo', { what: 'reading' });
     } catch (e) {}
   };
+  // reObserve: tap a history card → strengthen matching fateCodex relic + birth
+  el.querySelectorAll('article.hist').forEach(function (art, i) {
+    art.style.cursor = 'pointer';
+    art.title = '탭하면 기록 강화 (Codex reObserve)';
+    art.onclick = function () {
+      reObserveCodex(i);
+      renderHistory();
+    };
+  });
 }
 
 // ── 거울 — 쌓인 기록을 되돌려준다 ───────────────────────────────────────────
@@ -1032,17 +1110,42 @@ async function renderShareImage(){
   return new Promise(res => cv.toBlob(res, 'image/png'));
 }
 
+/** RelicShare DNA — share-at-peak uses utm/ref (never bare URL). share=bonus + K proxy. */
+function markTarotShareBonus(){
+  try {
+    const n = (parseInt(localStorage.getItem('tarotShareCount') || '0', 10) || 0) + 1;
+    localStorage.setItem('tarotShareCount', String(n));
+    localStorage.setItem('niobe_k_fate', String((parseInt(localStorage.getItem('niobe_k_fate') || '0', 10) || 0) + 1));
+    const sk = 'tarot_share_bonus_' + todayKey();
+    if (!localStorage.getItem(sk) && window.p10Grant) {
+      localStorage.setItem(sk, '1');
+      p10Grant(3);
+      if (typeof toast === 'function') toast('공유 보너스 · 가상 크레딧 +3');
+    }
+    seedCrossOnShareP21();
+  } catch (e) {}
+}
+function seedCrossOnShareP21(){
+  try {
+    const r = readJSON(CODEX_KEY, [])[0] || {};
+    localStorage.setItem('p21_fate_to_p9', JSON.stringify({ score: r.score || 60, power: r.power, ts: Date.now() }));
+    localStorage.setItem('p21_fate_to_p11', JSON.stringify({ relicPower: r.power, aura: 'tarot', ts: Date.now() }));
+    localStorage.setItem('p21_fate_to_p17', JSON.stringify({ spore: true, score: r.score || 60, ts: Date.now() }));
+  } catch (e) {}
+}
 async function shareReading(){
   if (!lastSpread){ toast('먼저 카드를 뽑아주세요.'); return; }
   if (window.legionTrack) legionTrack('share');
+  markTarotShareBonus();
   crossSync();
+  // always ship attributed URL (utm+ref) inside text — no bare domain-only share
   const text = shareText();
   try {
     const blob = await renderShareImage();
     if (blob){
       const file = new File([blob], 'tarot-reading.png', { type:'image/png' });
       if (navigator.canShare && navigator.canShare({ files:[file] })){
-        await navigator.share({ files:[file], text });
+        await navigator.share({ files:[file], text, url: getTarotShareUrl() });
         return;
       }
       // 이미지 공유가 안 되는 환경 → 이미지를 내려받게 하고 문구는 복사
@@ -1054,12 +1157,13 @@ async function shareReading(){
       return;
     }
   } catch(e){ /* 아래 텍스트 공유로 내려간다 */ }
-  if (navigator.share){ navigator.share({ title:'오늘의 타로 리딩', text }).catch(()=>{}); return; }
+  if (navigator.share){ navigator.share({ title:'오늘의 타로 리딩', text, url: getTarotShareUrl() }).catch(()=>{}); return; }
   copyText(text, '공유 문구를 복사했어요.');
 }
 function shareToX(){
   if (!lastSpread){ toast('먼저 카드를 뽑아주세요.'); return; }
   if (window.legionTrack) legionTrack('share');
+  markTarotShareBonus();
   crossSync();
   window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText()), '_blank', 'noopener');
 }
@@ -1151,7 +1255,8 @@ function init(){
 
   const sheet = $('sheet');
   if (sheet){
-    $('sheetClose').addEventListener('click', closeSheet);
+    const sheetClose = $('sheetClose');
+    if (sheetClose) sheetClose.addEventListener('click', closeSheet);
     sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
   }
