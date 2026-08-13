@@ -1301,7 +1301,7 @@ function init(){
   renderHistory();
   renderLibrary('all');
 
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(e){try{console.error('[SW] 등록 실패',e);if(window.legionTrack)legionTrack('sw_register_fail',{msg:String(e).slice(0,80)});}catch(_){}});
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
