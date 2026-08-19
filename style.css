@@ -37,6 +37,14 @@ button{ font:inherit; cursor:pointer; }
   color:var(--text-faint); margin:calc(var(--g)*2.5) 0 var(--g); font-weight:600; }
 .empty{ font-size:.8rem; color:var(--text-faint); margin:var(--g) 0 0; }
 
+/* ── 오늘 의식 (달 위상 = 천문계산 · 점술 사실 아님) ── */
+.ritual{ margin-top:calc(var(--g)*1.5); padding:calc(var(--g)*1.5) calc(var(--g)*2);
+  border:1px solid var(--line); border-radius:var(--r); background:var(--bg-soft); }
+.ritual-moon{ display:flex; flex-wrap:wrap; align-items:baseline; gap:var(--g); font-size:.82rem; }
+.ritual-moon b{ color:var(--gold); }
+.ritual-line{ margin:calc(var(--g)*.75) 0 0; font-size:.9rem; color:var(--text); }
+.ritual-note{ margin:calc(var(--g)*.5) 0 0; font-size:.68rem; color:var(--text-faint); line-height:1.5; }
+
 /* ── 오늘의 카드 ──────────────────────────────────────── */
 .daily{ display:flex; gap:calc(var(--g)*2); align-items:center;
   margin-top:calc(var(--g)*1.5); padding:calc(var(--g)*2);

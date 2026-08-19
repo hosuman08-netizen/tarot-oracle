@@ -408,6 +408,39 @@ function sajuLineHTML(spread){
 // ── 오늘의 카드 ─────────────────────────────────────────────────────────────
 // 같은 날에는 같은 카드가 나온다(시드 고정). 계속 다시 뽑아 원하는 답이 나올
 // 때까지 돌리는 걸 막는 정통 관행이기도 하다.
+/* GOLD50 TOP5: 달 위상(날짜 계산) + 허구 의식 한 줄. 점술 사실·미래단정 아님. */
+function moonPhaseInfo(d) {
+  const synodic = 29.530588853;
+  const known = Date.UTC(2000, 0, 6, 18, 14, 0);
+  const days = (d.getTime() - known) / 86400000;
+  const age = ((days % synodic) + synodic) % synodic;
+  const illum = Math.round((1 - Math.cos(2 * Math.PI * age / synodic)) / 2 * 100);
+  let name = '그믐';
+  if (age < 1.84566) name = '삭';
+  else if (age < 5.53699) name = '초승';
+  else if (age < 9.22831) name = '상현';
+  else if (age < 12.91963) name = '차오름';
+  else if (age < 16.61096) name = '보름';
+  else if (age < 20.30228) name = '기움';
+  else if (age < 23.99361) name = '하현';
+  else if (age < 27.68493) name = '그믐';
+  else name = '삭';
+  return { age: age.toFixed(1), illum: illum, name: name };
+}
+function renderDailyRitual() {
+  const host = $('dailyRitual');
+  if (!host) return;
+  const m = moonPhaseInfo(new Date());
+  let line = '오늘 마음에 두는 한 줄';
+  const c = todayLessonCard();
+  if (c && c.advice) line = c.advice;
+  else if (c && c.gist) line = c.gist;
+  host.innerHTML =
+    '<div class="ritual-moon"><b>' + esc(m.name) + '</b> · 밝기 ' + m.illum + '%' +
+      '<span class="hint">날짜로 계산한 천문값 · 운명 아님</span></div>' +
+    '<p class="ritual-line">“' + esc(line) + '”</p>' +
+    '<p class="ritual-note">허구 의식입니다. 점술 사실이 아니며 미래·운명을 단정하지 않습니다. 엔터테인먼트 · 18+</p>';
+}
 function renderDaily(){
   const host = $('dailyCard');
   if (!host || !window.TarotCore) return;
@@ -1301,7 +1334,7 @@ function init(){
   const rev = $('revToggle');
   if (rev){
     rev.checked = p.reversals;
-    rev.addEventListener('change', () => { setPref('reversals', rev.checked); renderDaily(); });
+    rev.addEventListener('change', () => { setPref('reversals', rev.checked); renderDaily(); renderDailyRitual(); });
   }
 
   document.querySelectorAll('[data-spread]').forEach(btn =>
@@ -1365,6 +1398,7 @@ function init(){
 
   renderReaderPick();
   renderDaily();
+  renderDailyRitual();
   renderDailyLesson();
   renderStreak();
   setInterval(function () { try { renderStreak(); } catch (e) {} }, 60000);
