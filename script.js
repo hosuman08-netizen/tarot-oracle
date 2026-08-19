@@ -965,7 +965,8 @@ function journalTagChips(list){
   if (!list || !list.length) return '<em class="tag-empty">없음</em>';
   return list.slice(0, 5).map(function (x) {
     const on = journalTagFilter && journalTagFilter === x.t ? ' on' : '';
-    return '<button type="button" class="tag' + on + '" data-tag="' + esc(x.t) + '">' + esc(x.t) + ' · ' + x.n + '</button>';
+    return '<button type="button" class="tag' + on + '" data-tag="' + esc(x.t) + '" data-n="' + x.n + '">' +
+      esc(x.t) + '<i class="tag-n">' + x.n + '</i></button>';
   }).join('');
 }
 function setJournalTagFilter(tag){
