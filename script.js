@@ -427,6 +427,23 @@ function moonPhaseInfo(d) {
   else name = '삭';
   return { age: age.toFixed(1), illum: illum, name: name };
 }
+const RITUAL_KEY = 'p21_ritual_line';
+function loadRitualLine() {
+  try {
+    const o = JSON.parse(localStorage.getItem(RITUAL_KEY) || 'null');
+    if (o && o.d === todayKey() && o.line) return String(o.line).slice(0, 80);
+  } catch (e) {}
+  return '';
+}
+function saveRitualLine() {
+  const inp = $('ritualOwn');
+  const line = ((inp && inp.value) || '').trim().slice(0, 80);
+  const s = $('ritualSaved');
+  if (!line) { if (s) s.textContent = '한 줄을 적어 주세요.'; return; }
+  try { localStorage.setItem(RITUAL_KEY, JSON.stringify({ d: todayKey(), line: line })); } catch (e) {}
+  if (s) s.textContent = '오늘 문장만 이 기기에 저장했어요.';
+  renderDailyRitual();
+}
 function renderDailyRitual() {
   const host = $('dailyRitual');
   if (!host) return;
@@ -435,11 +452,22 @@ function renderDailyRitual() {
   const c = todayLessonCard();
   if (c && c.advice) line = c.advice;
   else if (c && c.gist) line = c.gist;
+  const saved = loadRitualLine();
+  const shown = saved || line;
   host.innerHTML =
     '<div class="ritual-moon"><b>' + esc(m.name) + '</b> · 밝기 ' + m.illum + '%' +
       '<span class="hint">날짜로 계산한 천문값 · 운명 아님</span></div>' +
-    '<p class="ritual-line">“' + esc(line) + '”</p>' +
-    '<p class="ritual-note">허구 의식입니다. 점술 사실이 아니며 미래·운명을 단정하지 않습니다. 엔터테인먼트 · 18+</p>';
+    '<p class="ritual-line">“' + esc(shown) + '”</p>' +
+    '<div class="ritual-save">' +
+      '<input id="ritualOwn" maxlength="80" placeholder="오늘 마음에 두는 한 줄 (허구)" value="' + esc(saved || line) + '">' +
+      '<button type="button" id="ritualSaveBtn">오늘 문장 저장</button>' +
+      '<span class="saved" id="ritualSaved">' + (saved ? '오늘 저장됨' : '') + '</span>' +
+    '</div>' +
+    '<p class="ritual-note">허구 의식입니다. 점술 사실이 아니며 미래·운명을 단정하지 않습니다. 이 기기·오늘만 저장 · 엔터테인먼트 · 18+</p>';
+  const btn = $('ritualSaveBtn');
+  if (btn) btn.addEventListener('click', saveRitualLine);
+  const inp = $('ritualOwn');
+  if (inp) inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveRitualLine(); } });
 }
 function renderDaily(){
   const host = $('dailyCard');

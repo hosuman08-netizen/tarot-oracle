@@ -43,6 +43,12 @@ button{ font:inherit; cursor:pointer; }
 .ritual-moon{ display:flex; flex-wrap:wrap; align-items:baseline; gap:var(--g); font-size:.82rem; }
 .ritual-moon b{ color:var(--gold); }
 .ritual-line{ margin:calc(var(--g)*.75) 0 0; font-size:.9rem; color:var(--text); }
+.ritual-save{ display:flex; flex-wrap:wrap; gap:var(--g); align-items:center; margin:calc(var(--g)*.75) 0 0; }
+.ritual-save input{ flex:1 1 180px; min-width:0; background:var(--bg); color:var(--text);
+  border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; font-size:.82rem; }
+.ritual-save input:focus{ border-color:var(--line-lit); outline:none; }
+.ritual-save button{ font:inherit; font-size:.76rem; padding:8px 12px; border-radius:8px;
+  border:1px solid var(--line); background:transparent; color:var(--gold); cursor:pointer; }
 .ritual-note{ margin:calc(var(--g)*.5) 0 0; font-size:.68rem; color:var(--text-faint); line-height:1.5; }
 
 /* ── 오늘의 카드 ──────────────────────────────────────── */
