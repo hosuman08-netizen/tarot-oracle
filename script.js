@@ -29,6 +29,7 @@ const MAX_CLARIFY = 3;
 let convoClarifiers = [];   // 이번 리딩에서 뽑은 보충 카드들
 let convoAngle = null;      // 선택된 물음 각도
 let convoTargetIdx = -1;    // 보충이 겨눈 자리(-1 = 전체/마지막)
+let journalTagFilter = '';  // WAVE87: tag chip tap = history filter only (core unchanged)
 
 // ── 저장 유틸 (localStorage가 막혀 있어도 앱이 죽지 않게) ────────────────────
 function readJSON(key, fallback){
@@ -885,6 +886,12 @@ function renderHistory(){
   const delta = todayN - ydayN;
   const goal = 1;
   const gPct = Math.min(100, Math.round(todayN / goal * 100));
+  const filtered = journalTagFilter
+    ? all.filter(function (r) { return (r.tags || []).indexOf(journalTagFilter) >= 0; })
+    : all;
+  const filtLine = journalTagFilter
+    ? `<p class="hist-filter" id="histTagFilter">필터 · ${esc(journalTagFilter)} · ${filtered.length}건 · 탭해서 해제 · 해석 불변 · 18+</p>`
+    : '';
   el.innerHTML =
     `<div class="row" style="margin-bottom:10px;gap:8px;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-quiet" id="exportReadings">⬇ 기록 백업</button>
@@ -893,8 +900,9 @@ function renderHistory(){
       ${mAvg ? `<span class="hint">7일 기분 평균 ${mAvg}/5</span>` : ''}
       <span class="hint">오늘 ${todayN}/${goal}${todayN >= goal ? ' ✓' : ''} · 전일 ${delta >= 0 ? '+' : ''}${delta}</span>
     </div>
+    ${filtLine}
     <div style="height:6px;background:#1c1826;border-radius:4px;margin:0 0 12px;overflow:hidden"><i style="display:block;height:100%;width:${gPct}%;background:linear-gradient(90deg,#c4b5fd,#e0b552)"></i></div>` +
-    all.slice(0, 20).map(r => {
+    (filtered.length ? filtered.slice(0, 20).map(r => {
     if (!r || !Array.isArray(r.cards)) return '';
     const names = r.cards.map(c => esc((c && c.ko) || '?') + (c && c.reversed ? '<i>역</i>' : '')).join(' · ');
     const mood = r.mood ? `<span class="mood-dot" title="그때의 느낌 ${r.mood}/5">${'●'.repeat(r.mood)}${'○'.repeat(5-r.mood)}</span>` : '';
@@ -906,7 +914,9 @@ function renderHistory(){
       ${r.note ? `<p class="hist-note">${esc(r.note)}</p>` : ''}
       ${mood}
     </article>`;
-  }).join('');
+  }).join('') : '<p class="empty">이 태그가 붙은 기록이 없어요.</p>');
+  const hf = $('histTagFilter');
+  if (hf) hf.onclick = function () { setJournalTagFilter(''); };
   const xb = $('exportReadings');
   if (xb) xb.onclick = exportReadingsJSON;
   const ir = $('importReadings');
@@ -954,8 +964,15 @@ function journalTagCounts(rows){
 function journalTagChips(list){
   if (!list || !list.length) return '<em class="tag-empty">없음</em>';
   return list.slice(0, 5).map(function (x) {
-    return '<span class="tag">' + esc(x.t) + ' · ' + x.n + '</span>';
+    const on = journalTagFilter && journalTagFilter === x.t ? ' on' : '';
+    return '<button type="button" class="tag' + on + '" data-tag="' + esc(x.t) + '">' + esc(x.t) + ' · ' + x.n + '</button>';
   }).join('');
+}
+function setJournalTagFilter(tag){
+  tag = String(tag || '').trim();
+  journalTagFilter = (journalTagFilter && journalTagFilter === tag) ? '' : tag;
+  renderMirror();
+  renderHistory();
 }
 
 function renderMirror(){
@@ -992,7 +1009,7 @@ function renderMirror(){
          <div><span>7일</span><div class="tags">${journalTagChips(weekTags)}</div></div>
          <div><span>전체</span><div class="tags">${journalTagChips(allTags)}</div></div>
        </div>
-       <p class="mirror-cmp-note">저널에 남긴 키워드 집계입니다. 점술 사실이 아니며 카드 해석·결과는 바뀌지 않습니다. 엔터테인먼트 · 18+</p>
+       <p class="mirror-cmp-note">칩을 누르면 기록만 필터합니다. 점술 사실이 아니며 카드 해석·결과는 바뀌지 않습니다. 엔터테인먼트 · 18+</p>
      </div>`;
   el.innerHTML =
     cmp + tagCmp +
@@ -1470,6 +1487,11 @@ function init(){
   const tagHost = $('journalTags');
   if (tagHost) tagHost.addEventListener('click', e => {
     const b = e.target.closest('.tag'); if (b) b.classList.toggle('on');
+  });
+  const mirrorEl = $('mirror');
+  if (mirrorEl) mirrorEl.addEventListener('click', e => {
+    const b = e.target.closest('#tagCmp button.tag[data-tag]');
+    if (b) setJournalTagFilter(b.getAttribute('data-tag'));
   });
   document.querySelectorAll('.mood-btn').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('.mood-btn').forEach(x => x.classList.remove('on'));

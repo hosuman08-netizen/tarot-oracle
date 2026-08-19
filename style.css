@@ -282,7 +282,8 @@ button{ font:inherit; cursor:pointer; }
 .mirror-tags-cols > div{ padding:calc(var(--g)*1.5) var(--g); background:var(--bg-soft);
   border:1px solid var(--line); border-radius:var(--r); }
 .mirror-tags-cols span{ display:block; font-size:.66rem; color:var(--text-faint); margin-bottom:6px; }
-.mirror-tags-cols .tag{ pointer-events:none; }
+.mirror-tags-cols button.tag{ cursor:pointer; font:inherit; }
+.hist-filter{ margin:0 0 8px; font-size:.72rem; color:var(--gold); cursor:pointer; }
 .tag-empty{ font-style:normal; font-size:.72rem; color:var(--text-faint); }
 
 /* ── 기록 ─────────────────────────────────────────────── */
