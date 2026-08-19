@@ -940,6 +940,24 @@ function readingsSince(all, days) {
   });
 }
 
+function journalTagCounts(rows){
+  const c = {};
+  (rows || []).forEach(function (r) {
+    (r.tags || []).forEach(function (t) {
+      t = String(t || '').trim();
+      if (t) c[t] = (c[t] || 0) + 1;
+    });
+  });
+  return Object.keys(c).sort(function (a, b) { return c[b] - c[a]; })
+    .map(function (k) { return { t: k, n: c[k] }; });
+}
+function journalTagChips(list){
+  if (!list || !list.length) return '<em class="tag-empty">없음</em>';
+  return list.slice(0, 5).map(function (x) {
+    return '<span class="tag">' + esc(x.t) + ' · ' + x.n + '</span>';
+  }).join('');
+}
+
 function renderMirror(){
   const el = $('mirror'); if (!el || !window.TarotCore) return;
   const all = readJSON(READINGS_KEY, []);
@@ -950,6 +968,8 @@ function renderMirror(){
   }
   const week = readingsSince(all, 7);
   const w = week.length ? TarotCore.reflect(week) : null;
+  const weekTags = journalTagCounts(week);
+  const allTags = journalTagCounts(all);
   const bars = m.top.map(t =>
     `<li><span class="bar" style="--w:${Math.round(t.n / m.top[0].n * 100)}%"></span><b>${esc(t.ko)}</b><em>${t.n}회</em></li>`
   ).join('');
@@ -965,8 +985,17 @@ function renderMirror(){
          <p class="mirror-cmp-note">기록 집계입니다. 점술 사실이 아니며 카드 해석·결과는 바뀌지 않습니다. 엔터테인먼트 · 18+</p>
        </div>`
     : `<p class="mirror-cmp-note">최근 7일 기록이 없습니다. 전체만 보여요. 점술 사실이 아닙니다. 18+</p>`;
+  const tagCmp =
+    `<div class="mirror-tags-cmp" id="tagCmp">
+       <h3 class="block-label">저널 태그 7일 vs 전체</h3>
+       <div class="mirror-tags-cols">
+         <div><span>7일</span><div class="tags">${journalTagChips(weekTags)}</div></div>
+         <div><span>전체</span><div class="tags">${journalTagChips(allTags)}</div></div>
+       </div>
+       <p class="mirror-cmp-note">저널에 남긴 키워드 집계입니다. 점술 사실이 아니며 카드 해석·결과는 바뀌지 않습니다. 엔터테인먼트 · 18+</p>
+     </div>`;
   el.innerHTML =
-    cmp +
+    cmp + tagCmp +
     `<div class="mirror-stats">
        <div><b>${m.total}</b><span>뽑은 카드</span></div>
        <div><b>${m.revPct}%</b><span>역방향</span></div>
@@ -1001,6 +1030,7 @@ function saveJournal(){
   writeJSON(READINGS_KEY, all);
   const s = $('journalSaved'); if (s) s.textContent = '기록에 저장했어요.';
   renderHistory();
+  renderMirror();
 }
 
 // ── 카드 상세 (탭하면 열리는 층) ────────────────────────────────────────────

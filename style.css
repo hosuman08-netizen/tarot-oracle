@@ -276,6 +276,14 @@ button{ font:inherit; cursor:pointer; }
 .mirror-cmp-grid b{ display:block; font-size:.92rem; color:var(--gold); margin-top:4px; }
 .mirror-cmp-grid em{ display:block; font-style:normal; font-size:.66rem; color:var(--text-faint); margin-top:2px; }
 .mirror-cmp-note{ margin:calc(var(--g)*1) 0 0; font-size:.68rem; color:var(--text-faint); line-height:1.5; }
+/* WAVE80: journal tags 7d vs all — counts only, interpretations unchanged */
+.mirror-tags-cmp{ margin:calc(var(--g)*1.5) 0 var(--g); }
+.mirror-tags-cols{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:var(--g); }
+.mirror-tags-cols > div{ padding:calc(var(--g)*1.5) var(--g); background:var(--bg-soft);
+  border:1px solid var(--line); border-radius:var(--r); }
+.mirror-tags-cols span{ display:block; font-size:.66rem; color:var(--text-faint); margin-bottom:6px; }
+.mirror-tags-cols .tag{ pointer-events:none; }
+.tag-empty{ font-style:normal; font-size:.72rem; color:var(--text-faint); }
 
 /* ── 기록 ─────────────────────────────────────────────── */
 .hist{ padding:calc(var(--g)*1.5); border:1px solid var(--line);
