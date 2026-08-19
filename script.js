@@ -1033,17 +1033,39 @@ function closeSheet(){
 }
 
 // ── 도감 — '점 보는 도구'가 아니라 '배우는 앱'이 되게 하는 층 ───────────────
+function seenCardIds(){
+  const all = readJSON(READINGS_KEY, []);
+  const set = {};
+  (all || []).forEach(r => {
+    (r.cards || []).forEach(c => { if (c && c.id) set[c.id] = 1; });
+  });
+  return set;
+}
 function renderLibrary(filter){
   const el = $('libraryGrid'); if (!el || !window.TarotCore) return;
   const G = window.TarotGlyphs;
+  const seen = seenCardIds();
+  const total = TarotCore.DECK.length;
+  const nSeen = Object.keys(seen).length;
   const list = TarotCore.DECK.filter(c => !filter || filter === 'all' || c.suit === filter);
   el.innerHTML = list.map(c =>
-    `<button type="button" class="lib-card" data-id="${esc(c.id)}">
+    `<button type="button" class="lib-card${seen[c.id] ? ' seen' : ''}" data-id="${esc(c.id)}">
        <span class="lib-rank">${G ? G.rankMark(c) : ''}</span>
        <span class="lib-art">${G ? G.glyphFor(c) : ''}</span>
        <span class="lib-ko">${esc(c.ko)}</span>
+       ${seen[c.id] ? '<span class="lib-seen">본</span>' : ''}
      </button>`).join('');
   $('libraryCount').textContent = `${list.length}장`;
+  const prog = $('libProg');
+  if (prog){
+    const pct = total ? Math.round(nSeen / total * 100) : 0;
+    prog.innerHTML =
+      `<div class="lib-prog">
+         <span>도감 ${nSeen}/${total}</span>
+         <i><b style="width:${pct}%"></b></i>
+         <em>기록에 나온 카드 수입니다. 점술 사실이 아니며 해석·결과는 바뀌지 않습니다. 엔터테인먼트 · 18+</em>
+       </div>`;
+  }
 }
 function openLibraryCard(id){
   const card = TarotCore.DECK.filter(c => c.id === id)[0];
