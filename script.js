@@ -932,6 +932,14 @@ function renderHistory(){
 }
 
 // ── 거울 — 쌓인 기록을 되돌려준다 ───────────────────────────────────────────
+function readingsSince(all, days) {
+  const cut = Date.now() - days * 86400000;
+  return (all || []).filter(function (r) {
+    const t = r && r.ts ? Date.parse(r.ts) : 0;
+    return t >= cut;
+  });
+}
+
 function renderMirror(){
   const el = $('mirror'); if (!el || !window.TarotCore) return;
   const all = readJSON(READINGS_KEY, []);
@@ -940,10 +948,25 @@ function renderMirror(){
     el.innerHTML = `<p class="empty">리딩이 세 번 이상 쌓이면, 자주 나온 카드와 수트 편중을 여기서 되돌려드려요. (지금 ${all.length}번)</p>`;
     return;
   }
+  const week = readingsSince(all, 7);
+  const w = week.length ? TarotCore.reflect(week) : null;
   const bars = m.top.map(t =>
     `<li><span class="bar" style="--w:${Math.round(t.n / m.top[0].n * 100)}%"></span><b>${esc(t.ko)}</b><em>${t.n}회</em></li>`
   ).join('');
+  const cmp = w
+    ? `<div class="mirror-cmp">
+         <h3 class="block-label">7일 vs 전체</h3>
+         <div class="mirror-cmp-grid">
+           <div><span>뽑은 카드</span><b>${w.total}</b><em>전체 ${m.total}</em></div>
+           <div><span>역방향</span><b>${w.revPct}%</b><em>전체 ${m.revPct}%</em></div>
+           <div><span>최다 수트</span><b>${esc(w.topSuitKo)}</b><em>전체 ${esc(m.topSuitKo)}</em></div>
+           <div><span>자주 나온</span><b>${esc((w.top[0] && w.top[0].ko) || '—')}</b><em>전체 ${esc((m.top[0] && m.top[0].ko) || '—')}</em></div>
+         </div>
+         <p class="mirror-cmp-note">기록 집계입니다. 점술 사실이 아니며 카드 해석·결과는 바뀌지 않습니다. 엔터테인먼트 · 18+</p>
+       </div>`
+    : `<p class="mirror-cmp-note">최근 7일 기록이 없습니다. 전체만 보여요. 점술 사실이 아닙니다. 18+</p>`;
   el.innerHTML =
+    cmp +
     `<div class="mirror-stats">
        <div><b>${m.total}</b><span>뽑은 카드</span></div>
        <div><b>${m.revPct}%</b><span>역방향</span></div>

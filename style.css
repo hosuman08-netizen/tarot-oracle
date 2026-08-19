@@ -267,6 +267,15 @@ button{ font:inherit; cursor:pointer; }
 .mirror-notes li{ font-size:.78rem; color:var(--text-dim); padding-left:14px; position:relative; line-height:1.6; }
 .mirror-notes li::before{ content:''; position:absolute; left:0; top:.62em;
   width:5px; height:5px; border-radius:50%; background:var(--gold-dim); }
+.mirror-cmp{ margin:calc(var(--g)*1.5) 0 var(--g); }
+.mirror-cmp-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(92px,1fr));
+  gap:var(--g); }
+.mirror-cmp-grid div{ padding:calc(var(--g)*1.5) var(--g); background:var(--bg-soft);
+  border:1px solid var(--line); border-radius:var(--r); text-align:center; }
+.mirror-cmp-grid span{ display:block; font-size:.66rem; color:var(--text-faint); }
+.mirror-cmp-grid b{ display:block; font-size:.92rem; color:var(--gold); margin-top:4px; }
+.mirror-cmp-grid em{ display:block; font-style:normal; font-size:.66rem; color:var(--text-faint); margin-top:2px; }
+.mirror-cmp-note{ margin:calc(var(--g)*1) 0 0; font-size:.68rem; color:var(--text-faint); line-height:1.5; }
 
 /* ── 기록 ─────────────────────────────────────────────── */
 .hist{ padding:calc(var(--g)*1.5); border:1px solid var(--line);
