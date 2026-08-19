@@ -961,12 +961,23 @@ function journalTagCounts(rows){
   return Object.keys(c).sort(function (a, b) { return c[b] - c[a]; })
     .map(function (k) { return { t: k, n: c[k] }; });
 }
+// WAVE146: 전체엔 있고 7일 0인 태그는 7일 열에 n=0 dim 칩으로 남긴다 (집계만 · 해석 불변)
+function padWeekTags(weekTags, allTags){
+  const have = {};
+  (weekTags || []).forEach(function (x) { if (x && x.t) have[x.t] = true; });
+  const extra = (allTags || []).filter(function (x) { return x && x.t && !have[x.t]; })
+    .map(function (x) { return { t: x.t, n: 0 }; });
+  return (weekTags || []).concat(extra);
+}
 function journalTagChips(list){
   if (!list || !list.length) return '<em class="tag-empty">없음</em>';
   return list.slice(0, 5).map(function (x) {
+    const n = Number(x.n) || 0;
     const on = journalTagFilter && journalTagFilter === x.t ? ' on' : '';
-    return '<button type="button" class="tag' + on + '" data-tag="' + esc(x.t) + '" data-n="' + x.n + '">' +
-      esc(x.t) + '<i class="tag-n">' + x.n + '</i></button>';
+    const dim = n === 0 ? ' tag-dim' : '';
+    const title = n === 0 ? ' title="7일 0회"' : '';
+    return '<button type="button" class="tag' + on + dim + '" data-tag="' + esc(x.t) + '" data-n="' + n + '"' + title + '>' +
+      esc(x.t) + '<i class="tag-n">' + n + '</i></button>';
   }).join('');
 }
 function setJournalTagFilter(tag){
@@ -986,8 +997,8 @@ function renderMirror(){
   }
   const week = readingsSince(all, 7);
   const w = week.length ? TarotCore.reflect(week) : null;
-  const weekTags = journalTagCounts(week);
   const allTags = journalTagCounts(all);
+  const weekTags = padWeekTags(journalTagCounts(week), allTags);
   const bars = m.top.map(t =>
     `<li><span class="bar" style="--w:${Math.round(t.n / m.top[0].n * 100)}%"></span><b>${esc(t.ko)}</b><em>${t.n}회</em></li>`
   ).join('');

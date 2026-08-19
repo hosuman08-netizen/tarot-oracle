@@ -288,6 +288,11 @@ button{ font:inherit; cursor:pointer; }
   background:rgba(197,164,110,.16); color:var(--gold); font-style:normal; font-size:.62rem; line-height:1.4;
 }
 .mirror-tags-cols button.tag.on .tag-n{ background:var(--gold); color:#1a1420; }
+/* WAVE146: 전체엔 있고 7일 0인 칩만 dim. 집계 · 점술 사실 아님 */
+.mirror-tags-cols button.tag.tag-dim{ opacity:.38; }
+.mirror-tags-cols button.tag.tag-dim .tag-n{
+  background:rgba(197,164,110,.08); color:var(--text-faint);
+}
 .hist-filter{ margin:0 0 8px; font-size:.72rem; color:var(--gold); cursor:pointer; }
 .tag-empty{ font-style:normal; font-size:.72rem; color:var(--text-faint); }
 
