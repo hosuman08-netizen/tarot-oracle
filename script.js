@@ -381,7 +381,7 @@ function showTarotMoneyPipe(host){
     + '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'
     + '<a class="btn-primary" style="display:inline-block;padding:8px 12px;border-radius:10px;text-decoration:none;color:inherit;border:1px solid #c5a46e55" href="mailto:hoyashi95@gmail.com?subject=%5B%ED%83%80%EB%A1%9C%5D%20%ED%9B%84%EC%9B%90">☕ 후원 문의</a>'
     + '<button type="button" class="btn-quiet" onclick="shareReading && shareReading()">📤 공유</button>'
-    + '<a class="btn-quiet" style="display:inline-block;padding:8px 12px;border-radius:10px;text-decoration:none;color:#e0b552;border:1px solid #c5a46e55" href="https://hosuman08-netizen.github.io/saju-miniapp/?utm_source=tarot&utm_medium=duo&ref=tarot_pipe">🔮 사주와 교차 읽기</a>'
+    + '<a class="btn-quiet" style="display:inline-block;padding:8px 12px;border-radius:10px;text-decoration:none;color:#e0b552;border:1px solid #c5a46e55" href="' + ((/github\.io|workers\.dev|pages\.dev/.test(location.hostname||'')) ? 'https://hosuman08-netizen.github.io/saju-miniapp/?utm_source=tarot&utm_medium=duo&ref=tarot_pipe' : '../p20-saju-miniapp/index.html') + '">🔮 사주와 교차 읽기</a>'
     + '</div>';
   try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: (window.LEGION_APP || 'tarot-oracle'), duo: 'saju' }); } catch(e){}
 }
@@ -444,6 +444,66 @@ function renderDaily(){
 }
 
 // 오늘 카드가 와닿았는지 하루 한 번 되짚는 고리(Co-Star식 resonance) — 결정적·기기 저장.
+function lessonKey(){ return 'tarot_lesson_' + todayKey(); }
+function todayLessonCard(){
+  if (!window.TarotCore) return null;
+  const rnd = TarotCore.seededRandom(todayKey() + ':' + userSalt());
+  const p = prefs();
+  const drawn = TarotCore.drawSpread('one', { reversals:p.reversals, reversalRate:p.reversalRate, rnd });
+  return drawn && drawn[0] ? drawn[0] : null;
+}
+function rawDeckCard(c){
+  if (!c || !window.TarotCore || !TarotCore.DECK) return null;
+  for (let i = 0; i < TarotCore.DECK.length; i++) if (TarotCore.DECK[i].id === c.id) return TarotCore.DECK[i];
+  return null;
+}
+function renderDailyLesson(){
+  const host = $('dailyLesson');
+  if (!host || !window.TarotCore) return;
+  const c = todayLessonCard();
+  const raw = rawDeckCard(c);
+  if (!c || !raw) { host.innerHTML = ''; return; }
+  let st = {};
+  try { st = JSON.parse(localStorage.getItem(lessonKey()) || '{}'); } catch (e) { st = {}; }
+  const step = Math.max(0, Math.min(3, parseInt(st.step, 10) || 0));
+  const suit = TarotCore.SUITS[c.suit] || TarotCore.SUITS.major;
+  const suitTheme = suit.theme || '삶의 큰 흐름';
+  if (step >= 3) {
+    host.innerHTML = '<div class="lesson-head"><b>오늘 한 장 배우기</b><span class="lesson-step">3/3</span></div>'
+      + '<p class="lesson-done">오늘 이 장 마침 · ' + esc(c.ko) + (st.note ? ' — “' + esc(st.note) + '”' : '') + '</p>';
+    return;
+  }
+  if (step === 0) {
+    host.innerHTML = '<div class="lesson-head"><b>오늘 한 장 배우기</b><span class="lesson-step">1/3 상징</span></div>'
+      + '<p>' + esc(c.ko) + '는 ' + esc(suit.ko || '메이저') + ' — ' + esc(suitTheme) + '. '
+      + esc(raw.up.theme) + '.</p>'
+      + '<button type="button" class="btn-quiet" id="lessonNext">다음 · 정/역</button>';
+  } else if (step === 1) {
+    const face = c.reversed ? '역방향' : '정방향';
+    host.innerHTML = '<div class="lesson-head"><b>오늘 한 장 배우기</b><span class="lesson-step">2/3 정·역</span></div>'
+      + '<div class="pair"><div><b>정방향</b>' + esc(raw.up.gist) + '</div><div><b>역방향</b>' + esc(raw.rev.gist) + '</div></div>'
+      + '<p>오늘은 <b>' + esc(face) + '</b>으로 나왔어요. 같은 그림이 방향만 바뀌면 결이 달라집니다.</p>'
+      + '<button type="button" class="btn-quiet" id="lessonNext">다음 · 한 줄</button>';
+  } else {
+    const q = TarotCore.dailyPrompt(c);
+    host.innerHTML = '<div class="lesson-head"><b>오늘 한 장 배우기</b><span class="lesson-step">3/3 한 줄</span></div>'
+      + '<p>“' + esc(q) + '”</p>'
+      + '<input type="text" id="lessonNote" maxlength="80" placeholder="떠오르는 한 줄 (이 기기에만)">'
+      + '<button type="button" class="btn-quiet" id="lessonNext">오늘 마침</button>';
+  }
+  const btn = $('lessonNext');
+  if (btn) btn.onclick = function () {
+    const next = { step: step + 1, note: st.note || '' };
+    if (step === 2) {
+      const inp = $('lessonNote');
+      next.note = inp && inp.value ? inp.value.trim().slice(0, 80) : '';
+    }
+    try { localStorage.setItem(lessonKey(), JSON.stringify(next)); } catch (e) {}
+    if (window.legionTrack) try { legionTrack('lesson', { step: next.step }); } catch (e) {}
+    renderDailyLesson();
+  };
+}
+
 function dailyResoKey(){ return 'tarot_daily_reso_' + todayKey(); }
 function renderDailyResonance(){
   const el = $('dailyReso'); if (!el) return;
@@ -657,6 +717,7 @@ function reObserveCodex(idx) {
     lung.breath = ((lung.breath || 0) + 0.11) % 6.28;
     lung.lastSurprise = (lung.lastSurprise || 0) * 0.6 + 0.3;
     localStorage.setItem('p6_lungFragment', JSON.stringify(lung));
+    if (lastSpread && lastSpread.length) drawAura(lastSpread);
   } catch (e) {}
   if (window.legionTrack) try { legionTrack('reobserve', { idx: idx }); } catch (e) {}
   if (typeof toast === 'function') toast('기록 강화 · Lv' + r.relicLevel + ' (가상)');
@@ -964,6 +1025,15 @@ function drawAura(spread){
     d[i] += n; d[i+1] += n; d[i+2] += n;
   }
   ctx.putImageData(img, 0, 0);
+  // p6 lung eye — file was loaded but never drawn (Duo DNA 1chi)
+  try {
+    const lung = JSON.parse(localStorage.getItem('p6_lungFragment') || '{"breath":0}');
+    lung.breath = ((lung.breath || 0) + 0.05) % 6.28;
+    localStorage.setItem('p6_lungFragment', JSON.stringify(lung));
+    if (window.p6LungSurpriseEye) {
+      window.p6LungSurpriseEye(ctx, w, h * 0.58, lung, 0.4, { wound: 0.35 }, 0.16);
+    }
+  } catch (e) {}
 }
 
 const TAROT_SHARE_BASE = 'https://hosuman08-netizen.github.io/tarot-oracle/';
@@ -1295,6 +1365,7 @@ function init(){
 
   renderReaderPick();
   renderDaily();
+  renderDailyLesson();
   renderStreak();
   setInterval(function () { try { renderStreak(); } catch (e) {} }, 60000);
   renderMirror();

@@ -51,6 +51,19 @@ button{ font:inherit; cursor:pointer; }
 .daily-mean{ margin:calc(var(--g)*.75) 0 0; font-size:.86rem; }
 .daily-advice{ margin:calc(var(--g)*.5) 0 0; font-size:.78rem; color:var(--text-dim); }
 
+/* ── 오늘 한 장 배우기 (3단) ─────────────────────────── */
+.lesson{ margin-top:calc(var(--g)*1.5); padding:calc(var(--g)*1.5); background:var(--bg-soft); border:1px solid var(--line); border-radius:var(--r); }
+.lesson-head{ display:flex; justify-content:space-between; align-items:baseline; gap:var(--g); margin-bottom:var(--g); }
+.lesson-head b{ font-size:.82rem; color:var(--gold); }
+.lesson-step{ font-size:.7rem; color:var(--text-faint); }
+.lesson p{ margin:0 0 var(--g); font-size:.84rem; color:var(--text); line-height:1.55; }
+.lesson .pair{ display:grid; grid-template-columns:1fr 1fr; gap:var(--g); margin:var(--g) 0; }
+@media (max-width:420px){ .lesson .pair{ grid-template-columns:1fr; } }
+.lesson .pair div{ border:1px solid var(--line); border-radius:8px; padding:8px; font-size:.76rem; color:var(--text-dim); }
+.lesson .pair b{ display:block; color:var(--gold); font-size:.7rem; margin-bottom:4px; }
+.lesson input[type="text"]{ width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; font-size:.86rem; margin:6px 0; }
+.lesson-done{ font-size:.8rem; color:var(--gold); }
+
 /* ── 입력 ─────────────────────────────────────────────── */
 .field{ display:block; margin:calc(var(--g)*2) 0; }
 .field-label{ display:block; font-size:.78rem; color:var(--text-dim); margin-bottom:calc(var(--g)*.75); }
