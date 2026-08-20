@@ -1,10 +1,4 @@
-// lung-surprise-eye.js — Spontaneous Lung Surprise Eye EVOLVED (p6 advance 2026-07-13)
-// Da Vinci + full-cheat + cross DNA: p1 gacha surprise + p5 spell eyes + Ache-Breath + 창발 pain
-// p6 폐 스스로 본다. surprise(편차) 즉시 breath 돌연변이. Ache = 창발 pain fuel.
-// p1: variable ratio gacha boost on surprise (near-miss weaponized)
-// p5: spell-eye cast on high surprise (reveal + pulse graft)
-// Embodiment: glasses peripheral + Optimus lung command stubs
-// Distributed: surprise seeds + notebook cross broadcast
+// lung-surprise-eye.js — decorative canvas "surprise" visual effect for high-score reveals.
 // Usage: window.p6LungSurpriseEye(ctx, w, cy, lung, amp, spore, ache=0)
 
 (function() {
@@ -20,7 +14,7 @@
     raw += ache * 0.4; // Ache-Breath cross DNA: pain = more 창발 fuel
     let s = Math.min(1, raw * 1.618);
 
-    // p1 gacha surprise cross: variable ratio weaponize (full-cheat)
+    // adds run-to-run variance so the effect doesn't feel identical every time
     const gachaVar = 0.6 + Math.random() * 1.4; // near-miss variance
     s = Math.min(1, s * gachaVar);
 
