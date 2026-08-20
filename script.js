@@ -139,6 +139,7 @@ function currentFocus(){
 
 function drawReading(spreadKey){
   if (!window.TarotCore){ toast('타로 엔진을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.'); return; }
+  try { toast('숨 한 번 쉬고 — 질문을 마음에 담으세요. 뒤집습니다.'); } catch (e) {}
   const p = prefs();
   const spec = TarotCore.SPREADS[spreadKey] || TarotCore.SPREADS.one;
   const key = spec.key;
@@ -376,11 +377,17 @@ function showTarotMoneyPipe(host){
     el.style.cssText = 'margin:12px 0;padding:12px;border:1px solid #c5a46e55;border-radius:12px;background:#16121c;text-align:center;font-size:13px';
     (host || document.body).appendChild(el);
   }
-  el.innerHTML = '<div style="color:#e0b552;font-weight:700;margin-bottom:6px">💎 리딩 더 깊게</div>'
-    + '<p style="opacity:.8;font-size:12px;margin:0 0 8px">엔터테인먼트 · 운명 확정 아님 · 18+ 권장</p>'
+  el.innerHTML = '<p style="opacity:.85;font-size:12px;line-height:1.6;margin:0 0 8px;text-align:left">'
+    + '한 장은 방향만 알려줍니다.<br>왜 그런지, 언제 바뀌는지, 무엇을 하면 되는지는<br>자리와 자리 사이에 있습니다.</p>'
+    + '<p style="opacity:.85;font-size:12px;line-height:1.7;margin:0 0 8px;text-align:left">'
+    + '🔮 켈틱 크로스 (10장) — 상황의 전모<br>💞 관계 스프레드 (7장) — 그 사람과 나 사이<br>✝️ 크로스 (5장) — 결정 하나를 놓고</p>'
+    + '<p style="opacity:.7;font-size:11px;margin:0 0 10px">정식 250⭐ · 열람 전이면 봇 DM으로 환불 가능<br>※ 엔터테인먼트 목적의 해석이며 예측·확정이 아닙니다.</p>'
     + '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'
+    + '<button type="button" class="btn-primary" id="moneyPipeUpgrade">⭐ 정식 스프레드 (250⭐)</button>'
     + '<button type="button" class="btn-quiet" onclick="shareReading && shareReading()">📤 공유</button>'
     + '</div>';
+  var upg = document.getElementById('moneyPipeUpgrade');
+  if (upg) upg.onclick = function () { try { if (window.TarotPay) TarotPay.requestPaidSpread('celtic'); } catch (e) {} };
   try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: (window.LEGION_APP || 'tarot-oracle') }); } catch(e){}
 }
 // 하위 호환 — 예전 버튼이 부르던 이름
@@ -1213,9 +1220,10 @@ function shareText(){
   const key = lastSpread[0];
   const names = lastSpread.map(c => c.ko).join(' · ');
   const spec = TarotCore.SPREADS[lastSpreadKey] || {};
-  return `${spec.name || '타로 리딩'} — ${names}\n`
+  return `🃏 내 카드 이렇게 나왔다. 너는?\n`
+    + `${spec.name || '타로 리딩'} — ${names}\n`
     + `${key.ko} ${TarotCore.directionLabel(key)}: ${TarotCore.focusMeaning(key, lastFocus)}\n\n`
-    + `무료 타로 리딩 → ${getTarotShareUrl()}`;
+    + `${getTarotShareUrl()}`;
 }
 
 // 공유 이미지 — 카드가 실제로 보이는 한 장. 외부 요청 없이 캔버스로 굽는다.
