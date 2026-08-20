@@ -194,8 +194,7 @@ function drawReading(spreadKey){
          <p class="voice-line voice-close">${esc(reader.close(val))}</p>
        </div>`
     + `<h3 class="block-label">자리별로 읽기</h3>`
-    + `<ul class="reading-list">${perCard}</ul>`
-    + sajuLineHTML(spread);
+    + `<ul class="reading-list">${perCard}</ul>`;
 
   const spreadHost = $('spread');
   if (spreadHost) {
@@ -382,27 +381,10 @@ function showTarotMoneyPipe(host){
     + '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'
     + '<button type="button" class="btn-quiet" onclick="shareReading && shareReading()">📤 공유</button>'
     + '</div>';
-  try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: (window.LEGION_APP || 'tarot-oracle'), duo: 'saju' }); } catch(e){}
+  try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: (window.LEGION_APP || 'tarot-oracle') }); } catch(e){}
 }
 // 하위 호환 — 예전 버튼이 부르던 이름
 function drawTarot(n){ drawReading(n === 3 ? 'ppf' : n === 10 ? 'celtic' : n === 1 ? 'one' : n); }
-
-// 사주 연동은 '함께 읽기' 보조선일 뿐, 결과를 바꾸지 않는다는 걸 명시한다.
-function sajuLineHTML(spread){
-  const on = $('sajuLink') && $('sajuLink').checked;
-  if (!on) return '';
-  const rec = readJSON(CODEX_KEY, [])[0];
-  const score = rec && rec.score ? rec.score : null;
-  const els = {};
-  spread.forEach(c => { if (c.el) els[c.el] = (els[c.el]||0)+1; });
-  const top = Object.keys(els).sort((a,b)=>els[b]-els[a])[0];
-  const elKo = top ? TarotCore.ELEMENTS[top].ko : null;
-  return `<div class="saju-line"><b>사주와 겹쳐 읽기</b> — `
-    + (elKo ? `이번 스프레드는 <b>${esc(elKo)}</b> 기운이 가장 두껍습니다. ` : '')
-    + (score ? `저장된 사주 기록(${esc(score)})과 함께 놓고 보세요. ` : '사주 앱의 기록이 아직 없어요. ')
-    + `타로의 원소(불·물·공기·흙)와 사주의 오행을 나란히 두면 같은 질문을 두 각도로 볼 수 있습니다. `
-    + `<small>보조선일 뿐 카드 결과를 바꾸지 않습니다.</small></div>`;
-}
 
 // ── 오늘의 카드 ─────────────────────────────────────────────────────────────
 // 같은 날에는 같은 카드가 나온다(시드 고정). 계속 다시 뽑아 원하는 답이 나올
