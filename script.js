@@ -1471,7 +1471,16 @@ function init(){
   }
 
   document.querySelectorAll('[data-spread]').forEach(btn =>
-    btn.addEventListener('click', () => { persistLastPrefs(); drawReading(btn.dataset.spread); }));
+    btn.addEventListener('click', () => {
+      persistLastPrefs();
+      const key = btn.dataset.spread;
+      if (window.TarotPay && TarotPay.isPaidSpread(key) && !window.__tarotPaidUnlock) {
+        TarotPay.requestPaidSpread(key);
+        return;
+      }
+      window.__tarotPaidUnlock = false;
+      drawReading(key);
+    }));
 
   const cardsHost = $('cards');
   if (cardsHost){
