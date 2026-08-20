@@ -380,10 +380,7 @@ function showTarotMoneyPipe(host){
   el.innerHTML = '<div style="color:#e0b552;font-weight:700;margin-bottom:6px">💎 리딩 더 깊게</div>'
     + '<p style="opacity:.8;font-size:12px;margin:0 0 8px">엔터테인먼트 · 운명 확정 아님 · 18+ 권장</p>'
     + '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'
-    + ''
     + '<button type="button" class="btn-quiet" onclick="shareReading && shareReading()">📤 공유</button>'
-    + '<a class="btn-quiet" style="display:inline-block;padding:8px 12px;border-radius:10px;text-decoration:none;color:#e0b552;border:1px solid #c5a46e55" href="' + ((/github\.io|workers\.dev|pages\.dev/.test(location.hostname||'')) ? 'https://hosuman08-netizen.github.io/saju-miniapp/?utm_source=tarot&utm_medium=duo&ref=tarot_pipe' : '../p20-saju-miniapp/index.html') + '">🔮 사주와 교차 읽기</a>'
-    + '<a class="btn-quiet" style="display:inline-block;padding:8px 12px;border-radius:10px;text-decoration:none;color:#e0b552;border:1px solid #c5a46e55" href="' + ((/github\.io|workers\.dev|pages\.dev/.test(location.hostname||'')) ? 'https://hosuman08-netizen.github.io/fate-gacha/?utm_source=tarot&utm_medium=trio&ref=tarot_pipe' : '../p22-fate-gacha/index.html') + '">🎴 운명 뽑기</a>'
     + '</div>';
   try { if (window.legionTrack) legionTrack('money_pipe_shown', { app: (window.LEGION_APP || 'tarot-oracle'), duo: 'saju' }); } catch(e){}
 }
